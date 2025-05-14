@@ -78,8 +78,7 @@
         header {
             background: linear-gradient(135deg, var(--primary-dark), var(--primary));
             color: white;
-            padding: 1.8rem 0;
-            text-align: center;
+            padding: 1rem 0;
             box-shadow: var(--box-shadow);
             position: relative;
             overflow: hidden;
@@ -102,6 +101,14 @@
             max-width: 1200px;
             margin: 0 auto;
             padding: 0 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .top-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         
         .logo {
@@ -109,7 +116,6 @@
             align-items: center;
             justify-content: center;
             gap: 12px;
-            margin-bottom: 10px;
         }
         
         .logo i {
@@ -123,11 +129,48 @@
             letter-spacing: -0.5px;
         }
         
-        header p {
+        .header-description {
             font-weight: 300;
             max-width: 700px;
-            margin: 0 auto;
+            margin: 10px auto 0;
             opacity: 0.9;
+            text-align: center;
+        }
+
+        /* Navigation */
+        nav {
+            background-color: rgba(0,0,0,0.1);
+            margin-top: 1rem;
+            border-radius: var(--border-radius);
+            padding: 0.5rem;
+        }
+
+        .nav-links {
+            display: flex;
+            justify-content: center;
+            list-style: none;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-links a:hover {
+            background-color: rgba(255,255,255,0.2);
+        }
+
+        .nav-links a.active {
+            background-color: var(--accent);
         }
 
         /* Theme Switcher */
@@ -527,6 +570,16 @@
             background: #f60;
             color: white;
         }
+
+        .part-list-item .buy-link.ebay {
+            background: #0064d2;
+            color: white;
+        }
+
+        .part-list-item .buy-link.manufacturer {
+            background: var(--primary);
+            color: white;
+        }
         
         /* Comparison section */
         .tab-container {
@@ -638,21 +691,57 @@
             padding: 15px;
         }
 
-        .part-card .buy-now-btn {
-            display: block;
-            text-align: center;
+        .part-card .buy-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
             margin-top: 15px;
-            padding: 10px;
-            background: var(--primary);
-            color: white;
-            border-radius: var(--border-radius);
-            text-decoration: none;
-            font-weight: 500;
-            transition: var(--transition);
         }
 
-        .part-card .buy-now-btn:hover {
-            background: var(--primary-dark);
+        .part-card .buy-option {
+            flex: 1;
+            min-width: 120px;
+            padding: 8px;
+            background: var(--light);
+            border-radius: 4px;
+            font-size: 0.8rem;
+            text-align: center;
+            color: var(--dark);
+            text-decoration: none;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .part-card .buy-option:hover {
+            background: var(--primary-light);
+            color: white;
+        }
+
+        .part-card .buy-option .price {
+            font-weight: bold;
+            margin-top: 3px;
+        }
+
+        .part-card .buy-option.amazon {
+            background: #ff9900;
+            color: white;
+        }
+
+        .part-card .buy-option.newegg {
+            background: #f60;
+            color: white;
+        }
+
+        .part-card .buy-option.ebay {
+            background: #0064d2;
+            color: white;
+        }
+
+        .part-card .buy-option.manufacturer {
+            background: var(--primary);
+            color: white;
         }
         
         .specs {
@@ -858,6 +947,16 @@
             color: var(--gray);
             font-style: italic;
         }
+
+        .stat-card .part-name {
+            font-size: 0.8rem;
+            margin-top: 5px;
+            color: var(--primary);
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
         
         /* Compatibility check */
         .compatibility-check {
@@ -997,6 +1096,91 @@
         .toast.success {
             background-color: var(--success);
         }
+
+        /* Advanced search modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--box-shadow);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray);
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .filter-column {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filter-column label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--dark);
+            font-size: 0.9rem;
+        }
+
+        .filter-column input[type="range"] {
+            width: 100%;
+        }
+
+        .range-values {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+            font-size: 0.8rem;
+            color: var(--gray);
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
         
         /* Responsive */
         @media (max-width: 1200px) {
@@ -1041,6 +1225,16 @@
                 right: 10px;
                 flex-direction: column;
             }
+
+            .top-header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .modal-content {
+                width: 95%;
+                padding: 1rem;
+            }
         }
         
         /* Animations */
@@ -1058,11 +1252,30 @@
 <body>
     <header>
         <div class="header-content">
-            <div class="logo">
-                <i class="fas fa-desktop"></i>
-                <h1>PC Builder Pro</h1>
+            <div class="top-header">
+                <div class="logo">
+                    <i class="fas fa-desktop"></i>
+                    <h1>PC Builder Pro</h1>
+                </div>
+                <div class="theme-switcher">
+                    <div class="theme-option theme-blue active" data-theme="default"></div>
+                    <div class="theme-option theme-green" data-theme="theme-green"></div>
+                    <div class="theme-option theme-purple" data-theme="theme-purple"></div>
+                    <div class="theme-option theme-dark" data-theme="theme-dark"></div>
+                </div>
             </div>
-            <p>Compare components, analyze performance, and build your perfect system with our advanced comparison tools</p>
+            <p class="header-description">Compare components, analyze performance, and build your perfect system with our advanced comparison tools</p>
+            
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="#" class="active"><i class="fas fa-home"></i> Home</a></li>
+                    <li><a href="#"><i class="fas fa-star"></i> Reviews</a></li>
+                    <li><a href="#"><i class="fas fa-lightbulb"></i> Guides</a></li>
+                    <li><a href="#"><i class="fas fa-tools"></i> Build Planner</a></li>
+                    <li><a href="#"><i class="fas fa-chart-line"></i> Benchmarks</a></li>
+                    <li><a href="#"><i class="fas fa-question-circle"></i> Help</a></li>
+                </ul>
+            </nav>
         </div>
     </header>
     
@@ -1207,758 +1420,118 @@
         </section>
     </div>
 
+    <!-- Advanced Search Modal -->
+    <div class="modal" id="advanced-search-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-sliders-h"></i> Advanced Search Filters</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="filter-row">
+                <div class="filter-column">
+                    <label for="price-min">Minimum Price ($)</label>
+                    <input type="range" id="price-min" min="0" max="2000" step="50" value="0">
+                    <div class="range-values">
+                        <span>$0</span>
+                        <span id="price-min-value">$0</span>
+                    </div>
+                </div>
+                <div class="filter-column">
+                    <label for="price-max">Maximum Price ($)</label>
+                    <input type="range" id="price-max" min="50" max="5000" step="50" value="5000">
+                    <div class="range-values">
+                        <span id="price-max-value">$5000</span>
+                        <span>$5000+</span>
+                    </div>
+                </div>
+            </div>
+            <div class="filter-row">
+                <div class="filter-column">
+                    <label for="manufacturer-select">Manufacturer</label>
+                    <select id="manufacturer-select" multiple>
+                        <option value="intel">Intel</option>
+                        <option value="amd">AMD</option>
+                        <option value="nvidia">NVIDIA</option>
+                        <option value="samsung">Samsung</option>
+                        <option value="corsair">Corsair</option>
+                        <option value="asus">ASUS</option>
+                        <option value="msi">MSI</option>
+                        <option value="gigabyte">Gigabyte</option>
+                    </select>
+                </div>
+                <div class="filter-column">
+                    <label for="brand-select">Brand</label>
+                    <select id="brand-select" multiple>
+                        <option value="rog">ROG</option>
+                        <option value="strix">Strix</option>
+                        <option value="tuf">TUF</option>
+                        <option value="aorus">AORUS</option>
+                        <option value="nzxt">NZXT</option>
+                        <option value="evga">EVGA</option>
+                        <option value="xfx">XFX</option>
+                        <option value="sapphire">Sapphire</option>
+                    </select>
+                </div>
+            </div>
+            <div class="filter-row">
+                <div class="filter-column">
+                    <label for="ram-type">RAM Type</label>
+                    <select id="ram-type" multiple>
+                        <option value="ddr4">DDR4</option>
+                        <option value="ddr5">DDR5</option>
+                    </select>
+                </div>
+                <div class="filter-column">
+                    <label for="cooling-type">Cooling Type</label>
+                    <select id="cooling-type" multiple>
+                        <option value="air">Air</option>
+                        <option value="liquid">Liquid</option>
+                        <option value="passive">Passive</option>
+                    </select>
+                </div>
+            </div>
+            <div class="filter-row">
+                <div class="filter-column">
+                    <label for="performance-level">Performance Level</label>
+                    <select id="performance-level">
+                        <option value="">Any</option>
+                        <option value="entry">Entry Level</option>
+                        <option value="mid">Mid Range</option>
+                        <option value="high">High End</option>
+                        <option value="enthusiast">Enthusiast</option>
+                    </select>
+                </div>
+                <div class="filter-column">
+                    <label for="release-year">Release Year</label>
+                    <select id="release-year">
+                        <option value="">Any</option>
+                        <option value="2023">2023</option>
+                        <option value="2022">2022</option>
+                        <option value="2021">2021</option>
+                        <option value="2020">2020</option>
+                        <option value="older">Older</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button id="reset-filters" class="secondary"><i class="fas fa-undo"></i> Reset</button>
+                <button id="apply-filters"><i class="fas fa-check"></i> Apply Filters</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast notification -->
     <div class="toast" id="toast"></div>
-
-    <!-- Theme switcher -->
-    <div class="theme-switcher">
-        <div class="theme-option theme-blue active" data-theme="default"></div>
-        <div class="theme-option theme-green" data-theme="theme-green"></div>
-        <div class="theme-option theme-purple" data-theme="theme-purple"></div>
-        <div class="theme-option theme-dark" data-theme="theme-dark"></div>
-    </div>
     
     <!-- Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
     
+    <!-- Parts Database (would normally be in a separate file) -->
+    <script src="parts-database.js"></script>
+    
     <script>
-        // Specification tooltips database
-        const specTooltips = {
-            "manufacturer": "The company that produces this component",
-            "cores": "Number of physical processing cores (more cores help with multitasking)",
-            "threads": "Number of threads (logical processors that help with parallel tasks)",
-            "base_clock": "Default operating frequency (lower power consumption)",
-            "boost_clock": "Maximum achievable frequency under load (better performance)",
-            "cache": "High-speed memory on the CPU (larger cache improves performance)",
-            "tdp": "Thermal Design Power - heat output in watts (higher = more cooling needed)",
-            "socket": "Physical connector type (must match motherboard socket)",
-            "architecture": "Microarchitecture design (newer = better efficiency/performance)",
-            "lithography": "Manufacturing process in nanometers (smaller = more efficient)",
-            "memory_type": "Type of RAM supported (must match motherboard and RAM type)",
-            "max_memory": "Maximum RAM capacity supported by the CPU",
-            "price": "Current market price (USD)",
-            "release_date": "When this product was launched (newer = better support)",
-            "warranty": "Manufacturer warranty period",
-            "vram": "Video RAM - dedicated memory for the GPU (more = better for high resolutions)",
-            "memory_interface": "Memory bus width (wider = better memory bandwidth)",
-            "memory_speed": "Speed of the memory (faster = better performance)",
-            "pcie_interface": "PCI Express version (newer = more bandwidth)",
-            "ports": "Available display/output connections",
-            "length": "Physical size of the component (check case compatibility)",
-            "capacity": "Storage capacity (higher = more files/games/programs)",
-            "type": "Interface type (NVMe = faster than SATA)",
-            "form_factor": "Physical size standard (must fit in your case/motherboard)",
-            "read_speed": "Maximum data read speed (higher = faster loading)",
-            "write_speed": "Maximum data write speed (higher = faster saves/transfers)",
-            "endurance": "Total bytes written rating (higher = longer lifespan)",
-            "controller": "The chip that manages the storage operations",
-            "nand_type": "Flash memory technology (QLC = cheaper, TLC = better endurance)",
-            "dram_cache": "Presence of DRAM cache (improves performance and longevity)",
-            "encryption": "Hardware encryption support (better security)",
-            "chipset": "Motherboard chipset (determines features and CPU compatibility)",
-            "memory_slots": "Number of RAM slots (more = higher max capacity)",
-            "pcie_slots": "Number of PCIe expansion slots (for GPUs and other cards)",
-            "m2_slots": "Number of M.2 slots (for fast NVMe SSDs)",
-            "sata_ports": "Number of SATA ports (for drives and optical drives)",
-            "usb_ports": "Number and type of USB ports",
-            "wifi": "Wireless networking capabilities",
-            "bluetooth": "Bluetooth version (newer = better features/range)",
-            "audio": "Audio system quality (important for audiophiles)",
-            "rgb": "RGB lighting support (for aesthetics)"
-        };
-
-        // Enhanced database of computer parts with more details
-        const partsDatabase = {
-            cpu: [
-                {
-                    id: "cpu1",
-                    name: "Intel Core i9-13900K",
-                    image: "https://images.unsplash.com/photo-1592155931584-901ac15763e3?q=80&w=1470&auto=format&fit=crop",
-                    category: "CPU",
-                    brand: "Intel",
-                    performanceScore: 98,
-                    powerScore: 85,
-                    valueScore: 75,
-                    popularity: 95,
-                    buyLinks: {
-                        amazon: "https://www.amazon.com/Intel-i9-13900K-Desktop-Processor-P-cores/dp/B0BCF54SR1",
-                        newegg: "https://www.newegg.com/intel-core-i9-13900k-core-i9-13th-gen/p/N82E16819118412"
-                    },
-                    priceHistory: [
-                        { date: '2023-01', price: 650 },
-                        { date: '2023-02', price: 629 },
-                        { date: '2023-03', price: 599 },
-                        { date: '2023-04', price: 589 },
-                        { date: '2023-05', price: 579 },
-                        { date: '2023-06', price: 569 }
-                    ],
-                    benchmarks: {
-                        singleCore: 2200,
-                        multiCore: 24000,
-                        gaming: 98,
-                        productivity: 95
-                    },
-                    specs: {
-                        manufacturer: "Intel",
-                        cores: "24 (8P + 16E)",
-                        threads: "32",
-                        base_clock: "3.0 GHz",
-                        boost_clock: "5.8 GHz",
-                        cache: "36MB",
-                        tdp: "125W",
-                        socket: "LGA 1700",
-                        architecture: "Raptor Lake",
-                        lithography: "10nm",
-                        memory_type: "DDR4, DDR5",
-                        max_memory: "128GB",
-                        price: "$589",
-                        release_date: "Q4 2022",
-                        warranty: "3 years"
-                    },
-                    powerDraw: {
-                        base: 125,
-                        turbo: 253,
-                        overclocked: 300
-                    },
-                    dimensions: {
-                        length: 45,
-                        width: 45,
-                        height: 7.5
-                    }
-                },
-                {
-                    id: "cpu2",
-                    name: "AMD Ryzen 9 7950X",
-                    image: "https://images.unsplash.com/photo-1635805737707-575885ab0820?q=80&w=1374&auto=format&fit=crop",
-                    category: "CPU",
-                    brand: "AMD",
-                    performanceScore: 97,
-                    powerScore: 82,
-                    valueScore: 80,
-                    popularity: 90,
-                    buyLinks: {
-                        amazon: "https://www.amazon.com/AMD-Ryzen-7950X-16-Core-Processor/dp/B0BBHHT9Y2",
-                        newegg: "https://www.newegg.com/amd-ryzen-9-7950x/p/N82E16819113771"
-                    },
-                    priceHistory: [
-                        { date: '2023-01', price: 699 },
-                        { date: '2023-02', price: 699 },
-                        { date: '2023-03', price: 689 },
-                        { date: '2023-04', price: 679 },
-                        { date: '2023-05', price: 669 },
-                        { date: '2023-06', price: 659 }
-                    ],
-                    benchmarks: {
-                        singleCore: 2100,
-                        multiCore: 23000,
-                        gaming: 96,
-                        productivity: 97
-                    },
-                    specs: {
-                        manufacturer: "AMD",
-                        cores: "16",
-                        threads: "32",
-                        base_clock: "4.5 GHz",
-                        boost_clock: "5.7 GHz",
-                        cache: "80MB",
-                        tdp: "170W",
-                        socket: "AM5",
-                        architecture: "Zen 4",
-                        lithography: "5nm",
-                        memory_type: "DDR5",
-                        max_memory: "128GB",
-                        price: "$699",
-                        release_date: "Q3 2022",
-                        warranty: "3 years"
-                    },
-                    powerDraw: {
-                        base: 170,
-                        turbo: 230,
-                        overclocked: 280
-                    },
-                    dimensions: {
-                        length: 45,
-                        width: 45,
-                        height: 7.5
-                    }
-                },
-                {
-                    id: "cpu3",
-                    name: "Intel Core i7-13700K",
-                    image: "https://images.unsplash.com/photo-1592155931584-901ac15763e3?q=80&w=1470&auto=format&fit=crop",
-                    category: "CPU",
-                    brand: "Intel",
-                    performanceScore: 89,
-                    powerScore: 78,
-                    valueScore: 85,
-                    popularity: 88,
-                    buyLinks: {
-                        amazon: "https://www.amazon.com/Intel-i7-13700K-Desktop-Processor-P-cores/dp/B0BCF54L9T",
-                        newegg: "https://www.newegg.com/intel-core-i7-13700k-core-i7-13th-gen/p/N82E16819118413"
-                    },
-                    priceHistory: [
-                        { date: '2023-01', price: 450 },
-                        { date: '2023-02', price: 439 },
-                        { date: '2023-03', price: 429 },
-                        { date: '2023-04', price: 419 },
-                        { date: '2023-05', price: 409 },
-                        { date: '2023-06', price: 399 }
-                    ],
-                    benchmarks: {
-                        singleCore: 2000,
-                        multiCore: 19000,
-                        gaming: 92,
-                        productivity: 88
-                    },
-                    specs: {
-                        manufacturer: "Intel",
-                        cores: "16 (8P + 8E)",
-                        threads: "24",
-                        base_clock: "3.4 GHz",
-                        boost_clock: "5.4 GHz",
-                        cache: "30MB",
-                        tdp: "125W",
-                        socket: "LGA 1700",
-                        architecture: "Raptor Lake",
-                        lithography: "10nm",
-                        memory_type: "DDR4, DDR5",
-                        max_memory: "128GB",
-                        price: "$419",
-                        release_date: "Q4 2022",
-                        warranty: "3 years"
-                    },
-                    powerDraw: {
-                        base: 125,
-                        turbo: 190,
-                        overclocked: 230
-                    },
-                    dimensions: {
-                        length: 45,
-                        width: 45,
-                        height: 7.5
-                    }
-                }
-            ],
-            gpu: [
-                {
-                    id: "gpu1",
-                    name: "NVIDIA RTX 4090",
-                    image: "https://images.unsplash.com/photo-1631729371254-42c2892f0e6e?q=80&w=1470&auto=format&fit=crop",
-                    category: "GPU",
-                    brand: "NVIDIA",
-                    performanceScore: 100,
-                    powerScore: 70,
-                    valueScore: 65,
-                    popularity: 92,
-                    buyLinks: {
-                        amazon: "https://www.amazon.com/ASUS-GeForce-Graphics-DisplayPort-Axial-tech/dp/B0BGT232DB",
-                        newegg: "https://www.newegg.com/asus-geforce-rtx-4090-rog-strix-rtx4090-o24g-gaming/p/N82E16814126607"
-                    },
-                    priceHistory: [
-                        { date: '2023-01', price: 1599 },
-                        { date: '2023-02', price: 1599 },
-                        { date: '2023-03', price: 1599 },
-                        { date: '2023-04', price: 1599 },
-                        { date: '2023-05', price: 1599 },
-                        { date: '2023-06', price: 1599 }
-                    ],
-                    benchmarks: {
-                        gaming: 100,
-                        ray_tracing: 100,
-                        creative: 98,
-                        ai: 99
-                    },
-                    specs: {
-                        manufacturer: "NVIDIA",
-                        vram: "24GB GDDR6X",
-                        cores: "16384",
-                        boost_clock: "2.52 GHz",
-                        memory_interface: "384-bit",
-                        memory_speed: "21 Gbps",
-                        tdp: "450W",
-                        pcie_interface: "PCIe 4.0",
-                        ports: "3x DisplayPort, 1x HDMI",
-                        length: "304 mm",
-                        price: "$1599",
-                        release_date: "Q4 2022",
-                        warranty: "3 years"
-                    },
-                    powerDraw: {
-                        base: 450,
-                        overclocked: 550
-                    },
-                    dimensions: {
-                        length: 304,
-                        width: 137,
-                        height: 61,
-                        slots: 3.5
-                    }
-                },
-                {
-                    id: "gpu2",
-                    name: "AMD RX 7900 XTX",
-                    image: "https://images.unsplash.com/photo-1591488320449-011701bb6704?q=80&w=2070&auto=format&fit=crop",
-                    category: "GPU",
-                    brand: "AMD",
-                    performanceScore: 92,
-                    powerScore: 75,
-                    valueScore: 85,
-                    popularity: 85,
-                    buyLinks: {
-                        amazon: "https://www.amazon.com/XFX-Speedster-MERC310-Graphics-RX-7900XTX/dp/B0BP7QGY1H",
-                        newegg: "https://www.newegg.com/xfx-radeon-rx-7900-xtx-rx-79xmercb9/p/N82E16814150873"
-                    },
-                    priceHistory: [
-                        { date: '2023-01', price: 999 },
-                        { date: '2023-02', price: 999 },
-                        { date: '2023-03', price: 989 },
-                        { date: '2023-04', price: 979 },
-                        { date: '2023-05', price: 969 },
-                        { date: '2023-06', price: 959 }
-                    ],
-                    benchmarks: {
-                        gaming: 92,
-                        ray_tracing: 85,
-                        creative: 90,
-                        ai: 80
-                    },
-                    specs: {
-                        manufacturer: "AMD",
-                        vram: "24GB GDDR6",
-                        cores: "6144",
-                        boost_clock: "2.5 GHz",
-                        memory_interface: "384-bit",
-                        memory_speed: "20 Gbps",
-                        tdp: "355W",
-                        pcie_interface: "PCIe 4.0",
-                        ports: "2x DisplayPort, 1x HDMI, 1x USB-C",
-                        length: "287 mm",
-                        price: "$999",
-                        release_date: "Q4 2022",
-                        warranty: "2 years"
-                    },
-                    powerDraw: {
-                        base: 355,
-                        overclocked: 420
-                    },
-                    dimensions: {
-                        length: 287,
-                        width: 135,
-                        height: 58,
-                        slots: 2.7
-                    }
-                },
-                {
-                    id: "gpu3",
-                    name: "NVIDIA RTX 4080",
-                    image: "https://images.unsplash.com/photo-1631729371254-42c2892f0e6e?q=80&w=1470&auto=format&fit=crop",
-                    category: "GPU",
-                    brand: "NVIDIA",
-                    performanceScore: 88,
-                    powerScore: 78,
-                    valueScore: 70,
-                    popularity: 80,
-                    buyLinks: {
-                        amazon: "https://www.amazon.com/MSI-RTX-4080-16G-GAMING/dp/B0BN5FSB7G",
-                        newegg: "https://www.newegg.com/msi-geforce-rtx-4080-rtx-4080-16gb-ventus-3x-oc/p/N82E16814137761"
-                    },
-                    priceHistory: [
-                        { date: '2023-01', price: 1199 },
-                        { date: '2023-02', price: 1199 },
-                        { date: '2023-03', price: 1199 },
-                        { date: '2023-04', price: 1199 },
-                        { date: '2023-05', price: 1199 },
-                        { date: '2023-06', price: 1199 }
-                    ],
-                    benchmarks: {
-                        gaming: 88,
-                        ray_tracing: 90,
-                        creative: 85,
-                        ai: 90
-                    },
-                    specs: {
-                        manufacturer: "NVIDIA",
-                        vram: "16GB GDDR6X",
-                        cores: "9728",
-                        boost_clock: "2.51 GHz",
-                        memory_interface: "256-bit",
-                        memory_speed: "22.4 Gbps",
-                        tdp: "320W",
-                        pcie_interface: "PCIe 4.0",
-                        ports: "3x DisplayPort, 1x HDMI",
-                        length: "294 mm",
-                        price: "$1199",
-                        release_date: "Q4 2022",
-                        warranty: "3 years"
-                    },
-                    powerDraw: {
-                        base: 320,
-                        overclocked: 380
-                    },
-                    dimensions: {
-                        length: 294,
-                        width: 136,
-                        height: 62,
-                        slots: 3
-                    }
-                }
-            ],
-            ram: [
-                {
-                    id: "ram1",
-                    name: "Corsair Dominator Platinum RGB 32GB",
-                    image: "https://images.unsplash.com/photo-1591488320449-011701bb6704?q=80&w=2070&auto=format&fit=crop",
-                    category: "RAM",
-                    brand: "Corsair",
-                    performanceScore: 85,
-                    powerScore: 90,
-                    valueScore: 75,
-                    popularity: 82,
-                    buyLinks: {
-                        amazon: "https://www.amazon.com/CORSAIR-DOMINATOR-PLATINUM-PC5-48000-288-Pin/dp/B09PNG3J6Z",
-                        newegg: "https://www.newegg.com/corsair-32gb-288-pin-ddr5-sdram/p/N82E16820236833"
-                    },
-                    priceHistory: [
-                        { date: '2023-01', price: 249 },
-                        { date: '2023-02', price: 239 },
-                        { date: '2023-03', price: 229 },
-                        { date: '2023-04', price: 219 },
-                        { date: '2023-05', price: 209 },
-                        { date: '2023-06', price: 199 }
-                    ],
-                    benchmarks: {
-                        speed: 6000,
-                        latency: 36,
-                        bandwidth: 48000
-                    },
-                    specs: {
-                        manufacturer: "Corsair",
-                        capacity: "32GB (2x16GB)",
-                        speed: "DDR5-6000",
-                        latency: "CL36",
-                        voltage: "1.25V",
-                        form_factor: "DIMM",
-                        modules: "2",
-                        rgb: "Yes",
-                        price: "$249",
-                        release_date: "Q2 2022",
-                        warranty: "Lifetime"
-                    },
-                    powerDraw: {
-                        base: 5,
-                        overclocked: 8
-                    },
-                    dimensions: {
-                        length: 133,
-                        width: 8,
-                        height: 45
-                    }
-                },
-                {
-                    id: "ram2",
-                    name: "G.Skill Trident Z5 RGB 64GB",
-                    image: "https://images.unsplash.com/photo-1591488320449-011701bb6704?q=80&w=2070&auto=format&fit=crop",
-                    category: "RAM",
-                    brand: "G.Skill",
-                    performanceScore: 87,
-                    powerScore: 88,
-                    valueScore: 80,
-                    popularity: 78,
-                    buyLinks: {
-                        amazon: "https://www.amazon.com/G-Skill-Trident-288-Pin-CL36-36-36-96-F5-5600U3636C32GX2-TZ5RK/dp/B09QHXWQ1K",
-                        newegg: "https://www.newegg.com/g-skill-64gb-288-pin-ddr5-sdram/p/N82E16820374369"
-                    },
-                    priceHistory: [
-                        { date: '2023-01', price: 329 },
-                        { date: '2023-02', price: 319 },
-                        { date: '2023-03', price: 309 },
-                        { date: '2023-04', price: 299 },
-                        { date: '2023-05', price: 289 },
-                        { date: '2023-06', price: 279 }
-                    ],
-                    benchmarks: {
-                        speed: 5600,
-                        latency: 36,
-                        bandwidth: 44800
-                    },
-                    specs: {
-                        manufacturer: "G.Skill",
-                        capacity: "64GB (2x32GB)",
-                        speed: "DDR5-5600",
-                        latency: "CL36",
-                        voltage: "1.25V",
-                        form_factor: "DIMM",
-                        modules: "2",
-                        rgb: "Yes",
-                        price: "$329",
-                        release_date: "Q1 2022",
-                        warranty: "Lifetime"
-                    },
-                    powerDraw: {
-                        base: 6,
-                        overclocked: 10
-                    },
-                    dimensions: {
-                        length: 133,
-                        width: 8,
-                        height: 45
-                    }
-                }
-            ],
-            storage: [
-                {
-                    id: "storage1",
-                    name: "Samsung 990 Pro 2TB",
-                    image: "https://images.unsplash.com/photo-1591488320449-011701bb6704?q=80&w=2070&auto=format&fit=crop",
-                    category: "Storage",
-                    brand: "Samsung",
-                    performanceScore: 95,
-                    powerScore: 85,
-                    valueScore: 80,
-                    popularity: 90,
-                    buyLinks: {
-                        amazon: "https://www.amazon.com/SAMSUNG-990-PRO-Internal-Gaming/dp/B0BHC395WW",
-                        newegg: "https://www.newegg.com/samsung-2tb-990-pro/p/N82E16820147793"
-                    },
-                    priceHistory: [
-                        { date: '2023-01', price: 179 },
-                        { date: '2023-02', price: 169 },
-                        { date: '2023-03', price: 159 },
-                        { date: '2023-04', price: 149 },
-                        { date: '2023-05', price: 139 },
-                        { date: '2023-06', price: 129 }
-                    ],
-                    benchmarks: {
-                        read: 7450,
-                        write: 6900,
-                        iops: 1400000
-                    },
-                    specs: {
-                        manufacturer: "Samsung",
-                        capacity: "2TB",
-                        type: "NVMe PCIe 4.0",
-                        form_factor: "M.2 2280",
-                        read_speed: "7450 MB/s",
-                        write_speed: "6900 MB/s",
-                        endurance: "1200 TBW",
-                        controller: "Samsung Pascal",
-                        nand_type: "3D TLC",
-                        dram_cache: "Yes",
-                        encryption: "AES 256-bit",
-                        price: "$179",
-                        release_date: "Q4 2022",
-                        warranty: "5 years"
-                    },
-                    powerDraw: {
-                        idle: 0.05,
-                        active: 5.5,
-                        peak: 8.5
-                    },
-                    dimensions: {
-                        length: 80,
-                        width: 22,
-                        height: 2.4
-                    }
-                },
-                {
-                    id: "storage2",
-                    name: "WD Black SN850X 1TB",
-                    image: "https://images.unsplash.com/photo-1591488320449-011701bb6704?q=80&w=2070&auto=format&fit=crop",
-                    category: "Storage",
-                    brand: "Western Digital",
-                    performanceScore: 92,
-                    powerScore: 88,
-                    valueScore: 85,
-                    popularity: 85,
-                    buyLinks: {
-                        amazon: "https://www.amazon.com/WD_BLACK-SN850X-Internal-Gaming-Solid/dp/B0B7CKVCCV",
-                        newegg: "https://www.newegg.com/western-digital-1tb-black-sn850x-nvme/p/N82E16820250235"
-                    },
-                    priceHistory: [
-                        { date: '2023-01', price: 99 },
-                        { date: '2023-02', price: 95 },
-                        { date: '2023-03', price: 89 },
-                        { date: '2023-04', price: 85 },
-                        { date: '2023-05', price: 79 },
-                        { date: '2023-06', price: 75 }
-                    ],
-                    benchmarks: {
-                        read: 7300,
-                        write: 6300,
-                        iops: 1200000
-                    },
-                    specs: {
-                        manufacturer: "Western Digital",
-                        capacity: "1TB",
-                        type: "NVMe PCIe 4.0",
-                        form_factor: "M.2 2280",
-                        read_speed: "7300 MB/s",
-                        write_speed: "6300 MB/s",
-                        endurance: "600 TBW",
-                        controller: "WD Black G2",
-                        nand_type: "3D TLC",
-                        dram_cache: "Yes",
-                        encryption: "AES 256-bit",
-                        price: "$99",
-                        release_date: "Q3 2022",
-                        warranty: "5 years"
-                    },
-                    powerDraw: {
-                        idle: 0.05,
-                        active: 5.0,
-                        peak: 7.8
-                    },
-                    dimensions: {
-                        length: 80,
-                        width: 22,
-                        height: 2.4
-                    }
-                }
-            ],
-            motherboard: [
-                {
-                    id: "mb1",
-                    name: "ASUS ROG Maximus Z790 Hero",
-                    image: "https://images.unsplash.com/photo-1591488320449-011701bb6704?q=80&w=2070&auto=format&fit=crop",
-                    category: "Motherboard",
-                    brand: "ASUS",
-                    performanceScore: 90,
-                    powerScore: 85,
-                    valueScore: 70,
-                    popularity: 88,
-                    buyLinks: {
-                        amazon: "https://www.amazon.com/ASUS-Maximus-Motherboard-Thunderbolt-DisplayPort/dp/B0BDF6BZ2J",
-                        newegg: "https://www.newegg.com/asus-rog-maximus-z790-hero/p/N82E16813119667"
-                    },
-                    priceHistory: [
-                        { date: '2023-01', price: 599 },
-                        { date: '2023-02', price: 589 },
-                        { date: '2023-03', price: 579 },
-                        { date: '2023-04', price: 569 },
-                        { date: '2023-05', price: 559 },
-                        { date: '2023-06', price: 549 }
-                    ],
-                    specs: {
-                        manufacturer: "ASUS",
-                        socket: "LGA 1700",
-                        chipset: "Intel Z790",
-                        form_factor: "ATX",
-                        memory_slots: "4",
-                        max_memory: "128GB",
-                        memory_type: "DDR5",
-                        pcie_slots: "3x PCIe 5.0 x16",
-                        m2_slots: "4",
-                        sata_ports: "6",
-                        usb_ports: "12x USB 3.2, 2x USB-C",
-                        wifi: "Wi-Fi 6E",
-                        bluetooth: "5.2",
-                        audio: "ROG SupremeFX 7.1",
-                        rgb: "Yes",
-                        price: "$599",
-                        release_date: "Q4 2022",
-                        warranty: "3 years"
-                    },
-                    powerDraw: {
-                        idle: 15,
-                        load: 30
-                    },
-                    dimensions: {
-                        length: 305,
-                        width: 244,
-                        height: 50
-                    }
-                }
-            ],
-            psu: [
-                {
-                    id: "psu1",
-                    name: "Corsair RM1000x",
-                    image: "https://images.unsplash.com/photo-1591488320449-011701bb6704?q=80&w=2070&auto=format&fit=crop",
-                    category: "PSU",
-                    brand: "Corsair",
-                    performanceScore: 92,
-                    powerScore: 95,
-                    valueScore: 85,
-                    popularity: 90,
-                    buyLinks: {
-                        amazon: "https://www.amazon.com/CORSAIR-RM1000x-Fully-Modular-Supply/dp/B08R5PH1VX",
-                        newegg: "https://www.newegg.com/corsair-rm1000x-cp-9020201-na-1000w/p/N82E16817139235"
-                    },
-                    priceHistory: [
-                        { date: '2023-01', price: 199 },
-                        { date: '2023-02', price: 189 },
-                        { date: '2023-03', price: 179 },
-                        { date: '2023-04', price: 169 },
-                        { date: '2023-05', price: 159 },
-                        { date: '2023-06', price: 149 }
-                    ],
-                    specs: {
-                        manufacturer: "Corsair",
-                        wattage: "1000W",
-                        efficiency: "80+ Gold",
-                        form_factor: "ATX",
-                        modular: "Fully",
-                        pcie_connectors: "4",
-                        sata_connectors: "12",
-                        price: "$199",
-                        release_date: "Q4 2020",
-                        warranty: "10 years"
-                    },
-                    dimensions: {
-                        length: 160,
-                        width: 150,
-                        height: 86
-                    }
-                }
-            ],
-            case: [
-                {
-                    id: "case1",
-                    name: "Lian Li PC-O11 Dynamic",
-                    image: "https://images.unsplash.com/photo-1591488320449-011701bb6704?q=80&w=2070&auto=format&fit=crop",
-                    category: "Case",
-                    brand: "Lian Li",
-                    performanceScore: 88,
-                    powerScore: 90,
-                    valueScore: 80,
-                    popularity: 85,
-                    buyLinks: {
-                        amazon: "https://www.amazon.com/Lian-Li-PC-O11-Dynamic-Mid-Tower/dp/B07D5V929G",
-                        newegg: "https://www.newegg.com/p/2AM-000Z-00058"
-                    },
-                    priceHistory: [
-                        { date: '2023-01', price: 149 },
-                        { date: '2023-02', price: 139 },
-                        { date: '2023-03', price: 129 },
-                        { date: '2023-04', price: 129 },
-                        { date: '2023-05', price: 119 },
-                        { date: '2023-06', price: 109 }
-                    ],
-                    specs: {
-                        manufacturer: "Lian Li",
-                        type: "Mid Tower",
-                        color: "Black",
-                        material: "Steel/Tempered Glass",
-                        motherboard_support: "ATX, Micro-ATX, Mini-ITX",
-                        max_gpu_length: "420mm",
-                        max_cpu_cooler_height: "155mm",
-                        expansion_slots: "8",
-                        drive_bays: "6",
-                        price: "$149",
-                        release_date: "Q2 2018",
-                        warranty: "1 year"
-                    },
-                    dimensions: {
-                        length: 445,
-                        width: 272,
-                        height: 446
-                    }
-                }
-            ]
-        };
-        
         // DOM elements
         const categorySelect = document.getElementById('category-select');
         const searchInput = document.getElementById('search-input');
@@ -1977,6 +1550,16 @@
         const overclockPower = document.getElementById('overclock-power');
         const sizeCheckResult = document.getElementById('size-check-result');
         
+        // Modal elements
+        const advancedModal = document.getElementById('advanced-search-modal');
+        const closeModalBtn = document.querySelector('.close-modal');
+        const applyFiltersBtn = document.getElementById('apply-filters');
+        const resetFiltersBtn = document.getElementById('reset-filters');
+        const priceMinInput = document.getElementById('price-min');
+        const priceMaxInput = document.getElementById('price-max');
+        const priceMinValue = document.getElementById('price-min-value');
+        const priceMaxValue = document.getElementById('price-max-value');
+        
         // Tab elements
         const tabs = document.querySelectorAll('.tab');
         const tabContents = document.querySelectorAll('.tab-content');
@@ -1989,6 +1572,16 @@
         let performanceChart = null;
         let benchmarkChart = null;
         let priceHistoryChart = null;
+        let currentFilters = {
+            priceMin: 0,
+            priceMax: 5000,
+            manufacturers: [],
+            brands: [],
+            ramTypes: [],
+            coolingTypes: [],
+            performanceLevel: '',
+            releaseYear: ''
+        };
         
         // Initialize the app
         function init() {
@@ -1996,6 +1589,7 @@
             updateComparisonStats();
             setupEventListeners();
             setupThemeSwitcher();
+            setupAdvancedFilters();
             
             // For demo purposes, pre-add two parts
             setTimeout(() => {
@@ -2007,9 +1601,19 @@
         // Set up event listeners
         function setupEventListeners() {
             searchBtn.addEventListener('click', performSearch);
-            advancedBtn.addEventListener('click', showAdvancedSearch);
+            advancedBtn.addEventListener('click', () => advancedModal.style.display = 'flex');
+            closeModalBtn.addEventListener('click', () => advancedModal.style.display = 'none');
+            applyFiltersBtn.addEventListener('click', applyAdvancedFilters);
+            resetFiltersBtn.addEventListener('click', resetAdvancedFilters);
             categorySelect.addEventListener('change', function() {
                 currentSearchCategory = this.value;
+            });
+            
+            // Close modal when clicking outside
+            window.addEventListener('click', (e) => {
+                if (e.target === advancedModal) {
+                    advancedModal.style.display = 'none';
+                }
             });
             
             // Tab switching
@@ -2052,6 +1656,85 @@
             });
         }
         
+        // Set up advanced filters
+        function setupAdvancedFilters() {
+            // Price range inputs
+            priceMinInput.addEventListener('input', function() {
+                priceMinValue.textContent = `$${this.value}`;
+                currentFilters.priceMin = parseInt(this.value);
+            });
+            
+            priceMaxInput.addEventListener('input', function() {
+                priceMaxValue.textContent = `$${this.value}`;
+                currentFilters.priceMax = parseInt(this.value);
+            });
+            
+            // Manufacturer select
+            document.getElementById('manufacturer-select').addEventListener('change', function() {
+                currentFilters.manufacturers = Array.from(this.selectedOptions).map(opt => opt.value);
+            });
+            
+            // Brand select
+            document.getElementById('brand-select').addEventListener('change', function() {
+                currentFilters.brands = Array.from(this.selectedOptions).map(opt => opt.value);
+            });
+            
+            // RAM type select
+            document.getElementById('ram-type').addEventListener('change', function() {
+                currentFilters.ramTypes = Array.from(this.selectedOptions).map(opt => opt.value);
+            });
+            
+            // Cooling type select
+            document.getElementById('cooling-type').addEventListener('change', function() {
+                currentFilters.coolingTypes = Array.from(this.selectedOptions).map(opt => opt.value);
+            });
+            
+            // Performance level
+            document.getElementById('performance-level').addEventListener('change', function() {
+                currentFilters.performanceLevel = this.value;
+            });
+            
+            // Release year
+            document.getElementById('release-year').addEventListener('change', function() {
+                currentFilters.releaseYear = this.value;
+            });
+        }
+        
+        // Apply advanced filters
+        function applyAdvancedFilters() {
+            advancedModal.style.display = 'none';
+            performSearch();
+        }
+        
+        // Reset advanced filters
+        function resetAdvancedFilters() {
+            // Reset price range
+            priceMinInput.value = 0;
+            priceMaxInput.value = 5000;
+            priceMinValue.textContent = '$0';
+            priceMaxValue.textContent = '$5000';
+            
+            // Reset selects
+            document.getElementById('manufacturer-select').selectedIndex = -1;
+            document.getElementById('brand-select').selectedIndex = -1;
+            document.getElementById('ram-type').selectedIndex = -1;
+            document.getElementById('cooling-type').selectedIndex = -1;
+            document.getElementById('performance-level').selectedIndex = 0;
+            document.getElementById('release-year').selectedIndex = 0;
+            
+            // Reset filters object
+            currentFilters = {
+                priceMin: 0,
+                priceMax: 5000,
+                manufacturers: [],
+                brands: [],
+                ramTypes: [],
+                coolingTypes: [],
+                performanceLevel: '',
+                releaseYear: ''
+            };
+        }
+        
         // Show toast notification
         function showToast(message, type = '') {
             toast.textContent = message;
@@ -2076,9 +1759,14 @@
                 // Search in specific category
                 if (partsDatabase[currentSearchCategory]) {
                     filteredParts = partsDatabase[currentSearchCategory].filter(part => 
-                        part.name.toLowerCase().includes(currentSearchTerm) ||
-                        (part.brand && part.brand.toLowerCase().includes(currentSearchTerm)) ||
-                        (part.specs.manufacturer && part.specs.manufacturer.toLowerCase().includes(currentSearchTerm))
+                        matchesSearchTerm(part) &&
+                        matchesPriceFilter(part) &&
+                        matchesManufacturerFilter(part) &&
+                        matchesBrandFilter(part) &&
+                        matchesRamTypeFilter(part) &&
+                        matchesCoolingTypeFilter(part) &&
+                        matchesPerformanceLevelFilter(part) &&
+                        matchesReleaseYearFilter(part)
                     );
                 }
             } else {
@@ -2086,15 +1774,114 @@
                 for (const category in partsDatabase) {
                     filteredParts = filteredParts.concat(
                         partsDatabase[category].filter(part => 
-                            part.name.toLowerCase().includes(currentSearchTerm) ||
-                            (part.brand && part.brand.toLowerCase().includes(currentSearchTerm)) ||
-                            (part.specs.manufacturer && part.specs.manufacturer.toLowerCase().includes(currentSearchTerm))
+                            matchesSearchTerm(part) &&
+                            matchesPriceFilter(part) &&
+                            matchesManufacturerFilter(part) &&
+                            matchesBrandFilter(part) &&
+                            matchesRamTypeFilter(part) &&
+                            matchesCoolingTypeFilter(part) &&
+                            matchesPerformanceLevelFilter(part) &&
+                            matchesReleaseYearFilter(part)
                         )
                     );
                 }
             }
             
             displaySearchResults(filteredParts);
+        }
+        
+        // Helper functions for filtering
+        function matchesSearchTerm(part) {
+            if (!currentSearchTerm) return true;
+            
+            return part.name.toLowerCase().includes(currentSearchTerm) ||
+                (part.brand && part.brand.toLowerCase().includes(currentSearchTerm)) ||
+                (part.specs.manufacturer && part.specs.manufacturer.toLowerCase().includes(currentSearchTerm));
+        }
+        
+        function matchesPriceFilter(part) {
+            const price = extractNumericValue(part.specs.price) || 0;
+            return price >= currentFilters.priceMin && price <= currentFilters.priceMax;
+        }
+        
+        function matchesManufacturerFilter(part) {
+            if (currentFilters.manufacturers.length === 0) return true;
+            
+            const manufacturer = part.specs.manufacturer?.toLowerCase();
+            if (!manufacturer) return false;
+            
+            return currentFilters.manufacturers.some(m => manufacturer.includes(m));
+        }
+        
+        function matchesBrandFilter(part) {
+            if (currentFilters.brands.length === 0) return true;
+            
+            const brand = part.brand?.toLowerCase();
+            if (!brand) return false;
+            
+            return currentFilters.brands.some(b => brand.includes(b));
+        }
+        
+        function matchesRamTypeFilter(part) {
+            if (currentFilters.ramTypes.length === 0) return true;
+            if (part.category !== 'ram') return true;
+            
+            const ramType = part.specs.memory_type?.toLowerCase();
+            if (!ramType) return false;
+            
+            return currentFilters.ramTypes.some(r => ramType.includes(r));
+        }
+        
+        function matchesCoolingTypeFilter(part) {
+            if (currentFilters.coolingTypes.length === 0) return true;
+            if (part.category !== 'cooling') return true;
+            
+            const coolingType = part.specs.type?.toLowerCase();
+            if (!coolingType) return false;
+            
+            return currentFilters.coolingTypes.some(c => coolingType.includes(c));
+        }
+        
+        function matchesPerformanceLevelFilter(part) {
+            if (!currentFilters.performanceLevel) return true;
+            
+            // Simple classification based on performance score
+            switch(currentFilters.performanceLevel) {
+                case 'entry':
+                    return part.performanceScore < 50;
+                case 'mid':
+                    return part.performanceScore >= 50 && part.performanceScore < 75;
+                case 'high':
+                    return part.performanceScore >= 75 && part.performanceScore < 90;
+                case 'enthusiast':
+                    return part.performanceScore >= 90;
+                default:
+                    return true;
+            }
+        }
+        
+        function matchesReleaseYearFilter(part) {
+            if (!currentFilters.releaseYear) return true;
+            
+            const releaseDate = part.specs.release_date;
+            if (!releaseDate) return false;
+            
+            const year = parseInt(releaseDate.split(' ').pop());
+            
+            switch(currentFilters.releaseYear) {
+                case '2023':
+                    return year === 2023;
+                case '2022':
+                    return year === 2022;
+                case '2021':
+                    return year === 2021;
+                case '2020':
+                    return year === 2020;
+                case 'older':
+                    return year < 2020;
+                default:
+                    return true;
+            }
         }
         
         // Display search results
@@ -2143,8 +1930,10 @@
             if (part.buyLinks) {
                 buyLinksHTML = `
                     <div class="buy-links">
-                        ${part.buyLinks.amazon ? `<a href="${part.buyLinks.amazon}" target="_blank" class="buy-link amazon"><i class="fab fa-amazon"></i> Amazon</a>` : ''}
-                        ${part.buyLinks.newegg ? `<a href="${part.buyLinks.newegg}" target="_blank" class="buy-link newegg"><i class="fas fa-shopping-cart"></i> Newegg</a>` : ''}
+                        ${part.buyLinks.amazon ? `<a href="${part.buyLinks.amazon.url}" target="_blank" class="buy-link amazon"><i class="fab fa-amazon"></i> Amazon<br><span class="price">$${part.buyLinks.amazon.price}</span></a>` : ''}
+                        ${part.buyLinks.newegg ? `<a href="${part.buyLinks.newegg.url}" target="_blank" class="buy-link newegg"><i class="fas fa-shopping-cart"></i> Newegg<br><span class="price">$${part.buyLinks.newegg.price}</span></a>` : ''}
+                        ${part.buyLinks.ebay ? `<a href="${part.buyLinks.ebay.url}" target="_blank" class="buy-link ebay"><i class="fab fa-ebay"></i> eBay<br><span class="price">$${part.buyLinks.ebay.price}</span></a>` : ''}
+                        ${part.buyLinks.manufacturer ? `<a href="${part.buyLinks.manufacturer.url}" target="_blank" class="buy-link manufacturer"><i class="fas fa-industry"></i> Manufacturer<br><span class="price">$${part.buyLinks.manufacturer.price}</span></a>` : ''}
                     </div>
                 `;
             }
@@ -2152,7 +1941,7 @@
             partEl.innerHTML = `
                 <h4>${part.name}</h4>
                 <span class="category-badge">${part.category}</span>
-                <span class="price-tag">${part.specs.price}</span>
+                <span class="price-tag">$${getLowestPrice(part)}</span>
                 <img class="part-image" src="${part.image}" alt="${part.name}">
                 <div class="spec-preview">
                     ${previewSpecs.map(spec => `
@@ -2175,6 +1964,19 @@
             });
             
             return partEl;
+        }
+        
+        // Get the lowest available price for a part
+        function getLowestPrice(part) {
+            if (!part.buyLinks) return 'N/A';
+            
+            const prices = [];
+            if (part.buyLinks.amazon) prices.push(part.buyLinks.amazon.price);
+            if (part.buyLinks.newegg) prices.push(part.buyLinks.newegg.price);
+            if (part.buyLinks.ebay) prices.push(part.buyLinks.ebay.price);
+            if (part.buyLinks.manufacturer) prices.push(part.buyLinks.manufacturer.price);
+            
+            return prices.length > 0 ? Math.min(...prices) : 'N/A';
         }
         
         // Initialize the comparison slots
@@ -2218,13 +2020,37 @@
             const slot = document.getElementById(`add-part-${slotNumber}`);
             if (!slot) return;
             
-            // Create buy now button if links are available
-            let buyNowButton = '';
+            // Create buy options if links are available
+            let buyOptionsHTML = '';
             if (part.buyLinks) {
-                const primaryLink = part.buyLinks.amazon || part.buyLinks.newegg;
-                if (primaryLink) {
-                    buyNowButton = `<a href="${primaryLink}" target="_blank" class="buy-now-btn">Buy Now</a>`;
-                }
+                buyOptionsHTML = `
+                    <div class="buy-options">
+                        ${part.buyLinks.amazon ? `
+                            <a href="${part.buyLinks.amazon.url}" target="_blank" class="buy-option amazon">
+                                <i class="fab fa-amazon"></i>
+                                <span class="price">$${part.buyLinks.amazon.price}</span>
+                            </a>
+                        ` : ''}
+                        ${part.buyLinks.newegg ? `
+                            <a href="${part.buyLinks.newegg.url}" target="_blank" class="buy-option newegg">
+                                <i class="fas fa-shopping-cart"></i>
+                                <span class="price">$${part.buyLinks.newegg.price}</span>
+                            </a>
+                        ` : ''}
+                        ${part.buyLinks.ebay ? `
+                            <a href="${part.buyLinks.ebay.url}" target="_blank" class="buy-option ebay">
+                                <i class="fab fa-ebay"></i>
+                                <span class="price">$${part.buyLinks.ebay.price}</span>
+                            </a>
+                        ` : ''}
+                        ${part.buyLinks.manufacturer ? `
+                            <a href="${part.buyLinks.manufacturer.url}" target="_blank" class="buy-option manufacturer">
+                                <i class="fas fa-industry"></i>
+                                <span class="price">$${part.buyLinks.manufacturer.price}</span>
+                            </a>
+                        ` : ''}
+                    </div>
+                `;
             }
             
             // Create part card with tooltips for specs
@@ -2248,7 +2074,7 @@
                         </div>
                     `).join('')}
                 </div>
-                ${buyNowButton}
+                ${buyOptionsHTML}
                 <button class="remove-btn" data-slot="${slotNumber}">
                     <i class="fas fa-times"></i> Remove
                 </button>
@@ -2279,15 +2105,21 @@
             if (Object.keys(currentSelectedParts).length >= 2) {
                 checkCompatibility();
                 highlightBestSpecs();
-                
-                // Update charts if on those tabs
-                const activeTab = document.querySelector('.tab.active');
-                if (activeTab && activeTab.getAttribute('data-tab') === 'performance') {
-                    updatePerformanceChart();
-                    updateBenchmarkChart();
-                } else if (activeTab && activeTab.getAttribute('data-tab') === 'price') {
-                    updatePriceHistoryChart();
-                    updatePriceStats();
+            }
+            
+            // Update charts based on current tab
+            const activeTab = document.querySelector('.tab.active');
+            if (activeTab) {
+                const tabId = activeTab.getAttribute('data-tab');
+                switch(tabId) {
+                    case 'performance':
+                        updatePerformanceChart();
+                        updateBenchmarkChart();
+                        break;
+                    case 'price':
+                        updatePriceHistoryChart();
+                        updatePriceStats();
+                        break;
                 }
             }
         }
@@ -2462,7 +2294,8 @@
             const firstPart = currentSelectedParts[1];
             if (firstPart) {
                 // Calculate performance per dollar
-                const price1 = extractNumericValue(firstPart.specs.price) || 1;
+                const lowestPrice = getLowestPrice(firstPart);
+                const price1 = typeof lowestPrice === 'number' ? lowestPrice : extractNumericValue(firstPart.specs.price) || 1;
                 const perfPerDollar1 = (firstPart.performanceScore / price1).toFixed(2);
                 
                 statsGrid.innerHTML += `
@@ -2470,18 +2303,21 @@
                         <i class="fas fa-star"></i>
                         <h3>${firstPart.performanceScore}</h3>
                         <p>Performance Score</p>
+                        <p class="part-name">${firstPart.name}</p>
                         <p class="stat-description">Out of 100 benchmark score</p>
                     </div>
                     <div class="stat-card">
                         <i class="fas fa-dollar-sign"></i>
-                        <h3>${firstPart.specs.price}</h3>
-                        <p>Price</p>
+                        <h3>$${price1}</h3>
+                        <p>Best Price</p>
+                        <p class="part-name">${firstPart.name}</p>
                         <p class="stat-description">Current market price</p>
                     </div>
                     <div class="stat-card">
                         <i class="fas fa-percentage"></i>
                         <h3>${perfPerDollar1}</h3>
                         <p>Performance per $</p>
+                        <p class="part-name">${firstPart.name}</p>
                         <p class="stat-description">Higher is better value</p>
                     </div>
                 `;
@@ -2491,14 +2327,14 @@
             const secondPart = currentSelectedParts[2];
             if (secondPart) {
                 // Price difference
-                const price1 = extractNumericValue(firstPart.specs.price) || 0;
-                const price2 = extractNumericValue(secondPart.specs.price) || 0;
+                const price1 = getLowestPrice(firstPart);
+                const price2 = getLowestPrice(secondPart);
                 const priceDiff = price1 - price2;
-                const priceDiffPercent = Math.round((Math.abs(priceDiff) / ((price1 + price2) / 2)) * 100);
+                const priceDiffPercent = Math.round((Math.abs(priceDiff) / ((price1 + price2) / 2) * 100);
                 
                 // Performance difference
                 const perfDiff = firstPart.performanceScore - secondPart.performanceScore;
-                const perfDiffPercent = Math.round((Math.abs(perfDiff) / ((firstPart.performanceScore + secondPart.performanceScore) / 2)) * 100);
+                const perfDiffPercent = Math.round((Math.abs(perfDiff) / ((firstPart.performanceScore + secondPart.performanceScore) / 2) * 100);
                 
                 // Value score (performance per dollar)
                 const value1 = calculateValueScore(firstPart);
@@ -2510,15 +2346,17 @@
                         <i class="fas fa-money-bill-wave"></i>
                         <h3>${priceDiffPercent}%</h3>
                         <p>Price Difference</p>
+                        <p class="part-name">${firstPart.name} vs ${secondPart.name}</p>
                         <p class="price-difference ${priceDiff > 0 ? 'negative' : 'positive'}">
                             ${priceDiff > 0 ? 'More expensive' : 'Less expensive'}
                         </p>
-                        <p class="stat-description">${Math.abs(priceDiff)}$ difference</p>
+                        <p class="stat-description">$${Math.abs(priceDiff)} difference</p>
                     </div>
                     <div class="stat-card">
                         <i class="fas fa-tachometer-alt"></i>
                         <h3>${perfDiff > 0 ? '+' : ''}${perfDiff}</h3>
                         <p>Performance Difference</p>
+                        <p class="part-name">${firstPart.name} vs ${secondPart.name}</p>
                         <p class="price-difference ${perfDiff > 0 ? 'positive' : 'negative'}">
                             ${perfDiff > 0 ? 'Faster' : 'Slower'}
                         </p>
@@ -2528,6 +2366,7 @@
                         <i class="fas fa-chart-line"></i>
                         <h3>${valueDiff > 0 ? '+' : ''}${valueDiff}</h3>
                         <p>Value Difference</p>
+                        <p class="part-name">${firstPart.name} vs ${secondPart.name}</p>
                         <p class="price-difference ${valueDiff > 0 ? 'positive' : 'negative'}">
                             ${valueDiff > 0 ? 'Better value' : 'Worse value'}
                         </p>
@@ -2542,13 +2381,36 @@
             const part1 = currentSelectedParts[1];
             const part2 = currentSelectedParts[2];
             
-            if (!part1 || !part2) return;
+            if (!part1) return;
             
             priceStats.innerHTML = '';
             
-            // Calculate price statistics
-            const price1 = extractNumericValue(part1.specs.price) || 0;
-            const price2 = extractNumericValue(part2.specs.price) || 0;
+            // Single part price stats
+            if (!part2) {
+                const price1 = getLowestPrice(part1);
+                const priceDrop1 = calculatePriceDrop(part1.priceHistory);
+                
+                priceStats.innerHTML = `
+                    <div class="stat-card">
+                        <i class="fas fa-dollar-sign"></i>
+                        <h3>$${price1}</h3>
+                        <p>Best Price</p>
+                        <p class="part-name">${part1.name}</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-percentage"></i>
+                        <h3>${priceDrop1.percent}%</h3>
+                        <p>Price Drop</p>
+                        <p class="part-name">${part1.name}</p>
+                        <p class="stat-description">$${priceDrop1.amount} since ${priceDrop1.since}</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Two parts comparison
+            const price1 = getLowestPrice(part1);
+            const price2 = getLowestPrice(part2);
             const priceDiff = price1 - price2;
             
             // Calculate price drops
@@ -2599,7 +2461,11 @@
         
         // Calculate value score (price to performance)
         function calculateValueScore(part) {
-            const price = extractNumericValue(part.specs.price) || 1;
+            const price = getLowestPrice(part);
+            if (typeof price !== 'number') {
+                const priceFromSpecs = extractNumericValue(part.specs.price) || 1;
+                return Math.round((part.performanceScore / priceFromSpecs) * 100);
+            }
             return Math.round((part.performanceScore / price) * 100);
         }
         
@@ -2757,15 +2623,19 @@
                     content.classList.add('active');
                     
                     // Load data for this tab if needed
-                    if (tabId === 'performance' && Object.keys(currentSelectedParts).length >= 2) {
-                        updatePerformanceChart();
-                        updateBenchmarkChart();
-                    } else if (tabId === 'price' && Object.keys(currentSelectedParts).length >= 2) {
-                        updatePriceHistoryChart();
-                        updatePriceStats();
-                    } else if (tabId === 'build') {
-                        updatePowerRequirements();
-                        updateSizeCompatibility();
+                    switch(tabId) {
+                        case 'performance':
+                            updatePerformanceChart();
+                            updateBenchmarkChart();
+                            break;
+                        case 'price':
+                            updatePriceHistoryChart();
+                            updatePriceStats();
+                            break;
+                        case 'build':
+                            updatePowerRequirements();
+                            updateSizeCompatibility();
+                            break;
                     }
                 }
             });
@@ -2776,14 +2646,64 @@
             const part1 = currentSelectedParts[1];
             const part2 = currentSelectedParts[2];
             
-            if (!part1 || !part2) return;
-            
             const ctx = document.getElementById('performance-chart').getContext('2d');
             
             if (performanceChart) {
                 performanceChart.destroy();
             }
             
+            // Single part view
+            if (!part2) {
+                performanceChart = new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: ['Performance', 'Power Efficiency', 'Value', 'Popularity'],
+                        datasets: [
+                            {
+                                label: part1.name,
+                                data: [
+                                    part1.performanceScore,
+                                    part1.powerScore,
+                                    part1.valueScore,
+                                    part1.popularity
+                                ],
+                                backgroundColor: 'rgba(67, 97, 238, 0.2)',
+                                borderColor: 'rgba(67, 97, 238, 1)',
+                                borderWidth: 2,
+                                pointBackgroundColor: 'rgba(67, 97, 238, 1)'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            r: {
+                                angleLines: {
+                                    display: true
+                                },
+                                suggestedMin: 0,
+                                suggestedMax: 100
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            title: {
+                                display: true,
+                                text: 'Performance Overview',
+                                font: {
+                                    size: 16
+                                }
+                            }
+                        }
+                    }
+                });
+                return;
+            }
+            
+            // Two parts comparison
             performanceChart = new Chart(ctx, {
                 type: 'radar',
                 data: {
@@ -2850,13 +2770,60 @@
             const part1 = currentSelectedParts[1];
             const part2 = currentSelectedParts[2];
             
-            if (!part1 || !part2 || !part1.benchmarks || !part2.benchmarks) return;
-            
             const ctx = document.getElementById('benchmark-chart').getContext('2d');
             
             if (benchmarkChart) {
                 benchmarkChart.destroy();
             }
+            
+            // Single part view
+            if (!part2) {
+                if (!part1.benchmarks) return;
+                
+                // Get benchmark categories
+                const benchmarkCategories = Object.keys(part1.benchmarks);
+                
+                benchmarkChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: benchmarkCategories.map(cat => cat.replace('_', ' ').toUpperCase()),
+                        datasets: [
+                            {
+                                label: part1.name,
+                                data: benchmarkCategories.map(cat => part1.benchmarks[cat]),
+                                backgroundColor: 'rgba(67, 97, 238, 0.7)',
+                                borderColor: 'rgba(67, 97, 238, 1)',
+                                borderWidth: 1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            title: {
+                                display: true,
+                                text: 'Benchmark Scores',
+                                font: {
+                                    size: 16
+                                }
+                            }
+                        }
+                    }
+                });
+                return;
+            }
+            
+            // Two parts comparison
+            if (!part1.benchmarks || !part2.benchmarks) return;
             
             // Get benchmark categories that both parts have
             const benchmarkCategories = Object.keys(part1.benchmarks).filter(
@@ -2913,13 +2880,80 @@
             const part1 = currentSelectedParts[1];
             const part2 = currentSelectedParts[2];
             
-            if (!part1 || !part2 || !part1.priceHistory || !part2.priceHistory) return;
-            
             const priceHistoryElement = document.getElementById('price-history-chart');
             
             if (priceHistoryChart) {
                 priceHistoryChart.destroy();
             }
+            
+            // Single part view
+            if (!part2) {
+                if (!part1.priceHistory) return;
+                
+                const options = {
+                    series: [{
+                        name: part1.name,
+                        data: part1.priceHistory.map(item => item.price)
+                    }],
+                    chart: {
+                        height: 350,
+                        type: 'line',
+                        zoom: {
+                            enabled: false
+                        },
+                        toolbar: {
+                            show: false
+                        }
+                    },
+                    dataLabels: {
+                        enabled: false
+                    },
+                    stroke: {
+                        curve: 'straight',
+                        width: 2
+                    },
+                    colors: ['#4361ee'],
+                    title: {
+                        text: 'Price History',
+                        align: 'left',
+                        style: {
+                            fontSize: '16px',
+                            fontWeight: 'bold'
+                        }
+                    },
+                    grid: {
+                        row: {
+                            colors: ['#f3f3f3', 'transparent'],
+                            opacity: 0.5
+                        },
+                    },
+                    xaxis: {
+                        categories: part1.priceHistory.map(item => item.date),
+                        title: {
+                            text: 'Date'
+                        }
+                    },
+                    yaxis: {
+                        title: {
+                            text: 'Price ($)'
+                        }
+                    },
+                    tooltip: {
+                        y: {
+                            formatter: function(value) {
+                                return '$' + value;
+                            }
+                        }
+                    }
+                };
+                
+                priceHistoryChart = new ApexCharts(priceHistoryElement, options);
+                priceHistoryChart.render();
+                return;
+            }
+            
+            // Two parts comparison
+            if (!part1.priceHistory || !part2.priceHistory) return;
             
             const options = {
                 series: [
@@ -2986,11 +3020,6 @@
             
             priceHistoryChart = new ApexCharts(priceHistoryElement, options);
             priceHistoryChart.render();
-        }
-        
-        // Show advanced search modal (placeholder)
-        function showAdvancedSearch() {
-            alert('Advanced search functionality would be implemented here with more detailed filters.');
         }
         
         // Initialize the application when DOM is loaded
