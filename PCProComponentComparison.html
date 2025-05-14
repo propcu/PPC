@@ -2067,4 +2067,934 @@
         // Perform search based on filters
         function performSearch() {
             currentSearchTerm = searchInput.value.trim().toLowerCase();
-           
+            currentSearchCategory = categorySelect.value;
+            
+            // Filter parts
+            let filteredParts = [];
+            
+            if (currentSearchCategory) {
+                // Search in specific category
+                if (partsDatabase[currentSearchCategory]) {
+                    filteredParts = partsDatabase[currentSearchCategory].filter(part => 
+                        part.name.toLowerCase().includes(currentSearchTerm) ||
+                        (part.brand && part.brand.toLowerCase().includes(currentSearchTerm)) ||
+                        (part.specs.manufacturer && part.specs.manufacturer.toLowerCase().includes(currentSearchTerm))
+                    );
+                }
+            } else {
+                // Search across all categories
+                for (const category in partsDatabase) {
+                    filteredParts = filteredParts.concat(
+                        partsDatabase[category].filter(part => 
+                            part.name.toLowerCase().includes(currentSearchTerm) ||
+                            (part.brand && part.brand.toLowerCase().includes(currentSearchTerm)) ||
+                            (part.specs.manufacturer && part.specs.manufacturer.toLowerCase().includes(currentSearchTerm))
+                        )
+                    );
+                }
+            }
+            
+            displaySearchResults(filteredParts);
+        }
+        
+        // Display search results
+        function displaySearchResults(parts) {
+            partList.innerHTML = '';
+            
+            if (parts.length === 0) {
+                partList.innerHTML = `
+                    <div style="grid-column:1/-1;text-align:center;padding:40px 20px;">
+                        <i class="fas fa-search" style="font-size:2rem;color:var(--light-gray);margin-bottom:15px;"></i>
+                        <h3>No parts found</h3>
+                        <p>Try adjusting your search criteria</p>
+                    </div>
+                `;
+                resultsCount.textContent = "0 results";
+            } else {
+                parts.forEach(part => {
+                    const partEl = createPartListItem(part);
+                    partList.appendChild(partEl);
+                });
+                resultsCount.textContent = `${parts.length} ${parts.length === 1 ? 'result' : 'results'}`;
+            }
+            
+            // Show results section with animation
+            resultsSection.classList.add('visible');
+            
+            // Scroll to results if not already visible
+            const resultsRect = resultsSection.getBoundingClientRect();
+            if (resultsRect.top < 0 || resultsRect.bottom > window.innerHeight) {
+                resultsSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+        
+        // Create a part list item element
+        function createPartListItem(part) {
+            const partEl = document.createElement('div');
+            partEl.className = 'part-list-item';
+            
+            // Get first 3 specs to show in preview
+            const previewSpecs = Object.entries(part.specs)
+                .slice(0, 3)
+                .map(([key, val]) => ({ key, val }));
+            
+            // Create buy links if available
+            let buyLinksHTML = '';
+            if (part.buyLinks) {
+                buyLinksHTML = `
+                    <div class="buy-links">
+                        ${part.buyLinks.amazon ? `<a href="${part.buyLinks.amazon}" target="_blank" class="buy-link amazon"><i class="fab fa-amazon"></i> Amazon</a>` : ''}
+                        ${part.buyLinks.newegg ? `<a href="${part.buyLinks.newegg}" target="_blank" class="buy-link newegg"><i class="fas fa-shopping-cart"></i> Newegg</a>` : ''}
+                    </div>
+                `;
+            }
+            
+            partEl.innerHTML = `
+                <h4>${part.name}</h4>
+                <span class="category-badge">${part.category}</span>
+                <span class="price-tag">${part.specs.price}</span>
+                <img class="part-image" src="${part.image}" alt="${part.name}">
+                <div class="spec-preview">
+                    ${previewSpecs.map(spec => `
+                        <div class="spec-preview-item" title="${spec.key.replace('_', ' ')}: ${spec.val}">
+                            ${spec.key.replace('_', ' ').substring(0, 10)}: ${spec.val.substring(0, 10)}${spec.val.length > 10 ? '...' : ''}
+                        </div>
+                    `).join('')}
+                </div>
+                ${buyLinksHTML}
+            `;
+            
+            partEl.addEventListener('click', function() {
+                addPartToComparison(part, currentSelectedSlot || 1);
+                resultsSection.classList.remove('visible');
+                // Reset slot highlighting
+                document.querySelectorAll('.add-part-btn').forEach(btn => {
+                    btn.style.borderColor = 'var(--light-gray)';
+                    btn.querySelector('span').style.color = 'var(--primary)';
+                });
+            });
+            
+            return partEl;
+        }
+        
+        // Initialize the comparison slots
+        function initializeComparisonSlots() {
+            for (let i = 1; i <= 2; i++) {
+                const slot = document.getElementById(`add-part-${i}`);
+                slot.addEventListener('click', function() {
+                    openPartSelection(i);
+                });
+            }
+        }
+        
+        // Open part selection for a specific slot
+        function openPartSelection(slotNumber) {
+            currentSelectedSlot = slotNumber;
+            searchInput.focus();
+            
+            // Highlight the slot we're selecting for
+            document.querySelectorAll('.add-part-btn').forEach(btn => {
+                btn.style.borderColor = btn.id === `add-part-${slotNumber}` ? 'var(--primary)' : 'var(--light-gray)';
+                btn.querySelector('span').style.color = btn.id === `add-part-${slotNumber}` ? 'var(--primary)' : 'var(--primary)';
+            });
+            
+            // Show results if not visible
+            if (!resultsSection.classList.contains('visible')) {
+                resultsSection.classList.add('visible');
+                resultsSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+        
+        // Add a part to the comparison
+        function addPartToComparison(part, slotNumber) {
+            // Check if this part is already in comparison
+            for (const [slot, existingPart] of Object.entries(currentSelectedParts)) {
+                if (existingPart.id === part.id) {
+                    showToast(`This part is already in slot ${slot}`, 'error');
+                    return;
+                }
+            }
+            
+            const slot = document.getElementById(`add-part-${slotNumber}`);
+            if (!slot) return;
+            
+            // Create buy now button if links are available
+            let buyNowButton = '';
+            if (part.buyLinks) {
+                const primaryLink = part.buyLinks.amazon || part.buyLinks.newegg;
+                if (primaryLink) {
+                    buyNowButton = `<a href="${primaryLink}" target="_blank" class="buy-now-btn">Buy Now</a>`;
+                }
+            }
+            
+            // Create part card with tooltips for specs
+            const partCard = document.createElement('div');
+            partCard.className = 'part-card';
+            partCard.innerHTML = `
+                <div class="performance-score" title="Performance score out of 100">${part.performanceScore}</div>
+                <h3>${part.name}</h3>
+                <img src="${part.image}" alt="${part.name}">
+                <div class="specs">
+                    ${Object.entries(part.specs).map(([key, value]) => `
+                        <div class="spec-item">
+                            <span class="spec-name" title="${key.replace('_', ' ')}">
+                                <div class="tooltip">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span class="tooltiptext">${specTooltips[key] || 'No description available'}</span>
+                                </div>
+                                ${key.replace('_', ' ')}
+                            </span>
+                            <span class="spec-value">${value}</span>
+                        </div>
+                    `).join('')}
+                </div>
+                ${buyNowButton}
+                <button class="remove-btn" data-slot="${slotNumber}">
+                    <i class="fas fa-times"></i> Remove
+                </button>
+            `;
+            
+            // Replace the add button with the part card
+            slot.replaceWith(partCard);
+            
+            // Add remove button functionality
+            partCard.querySelector('.remove-btn').addEventListener('click', function() {
+                removePartFromComparison(slotNumber);
+            });
+            
+            // Store the selected part
+            currentSelectedParts[slotNumber] = part;
+            
+            // Add a new empty slot if we've filled the last one
+            if (Object.keys(currentSelectedParts).length === 2) {
+                addNewComparisonSlot();
+            }
+            
+            // Update statistics and visualizations
+            updateComparisonStats();
+            updatePowerRequirements();
+            updateSizeCompatibility();
+            
+            // Check compatibility if we have two parts
+            if (Object.keys(currentSelectedParts).length >= 2) {
+                checkCompatibility();
+                highlightBestSpecs();
+                
+                // Update charts if on those tabs
+                const activeTab = document.querySelector('.tab.active');
+                if (activeTab && activeTab.getAttribute('data-tab') === 'performance') {
+                    updatePerformanceChart();
+                    updateBenchmarkChart();
+                } else if (activeTab && activeTab.getAttribute('data-tab') === 'price') {
+                    updatePriceHistoryChart();
+                    updatePriceStats();
+                }
+            }
+        }
+        
+        // Remove a part from comparison
+        function removePartFromComparison(slotNumber) {
+            const partCard = document.querySelector(`.part-card button[data-slot="${slotNumber}"]`);
+            if (!partCard) return;
+            
+            const partCardParent = partCard.parentNode;
+            
+            // Create new add button
+            const addBtn = document.createElement('div');
+            addBtn.className = 'part-card add-part-btn';
+            addBtn.id = `add-part-${slotNumber}`;
+            addBtn.innerHTML = `
+                <span>+</span>
+                <p>Add ${slotNumber === 1 ? 'First' : 'Second'} Component</p>
+            `;
+            addBtn.addEventListener('click', function() {
+                openPartSelection(slotNumber);
+            });
+            
+            // Replace the part card with add button
+            partCardParent.replaceWith(addBtn);
+            
+            // Remove from selected parts
+            delete currentSelectedParts[slotNumber];
+            
+            // Remove any highlight classes
+            document.querySelectorAll('.highlight').forEach(el => {
+                el.classList.remove('highlight');
+            });
+            
+            // Hide compatibility check if we don't have two parts
+            if (Object.keys(currentSelectedParts).length < 2) {
+                compatibilityCheck.classList.add('hidden');
+            }
+            
+            // Update statistics
+            updateComparisonStats();
+            updatePowerRequirements();
+            updateSizeCompatibility();
+            
+            // Clear charts if we removed one of two parts
+            if (Object.keys(currentSelectedParts).length < 2) {
+                if (performanceChart) {
+                    performanceChart.destroy();
+                    performanceChart = null;
+                }
+                if (benchmarkChart) {
+                    benchmarkChart.destroy();
+                    benchmarkChart = null;
+                }
+                if (priceHistoryChart) {
+                    priceHistoryChart.destroy();
+                    priceHistoryChart = null;
+                }
+                priceStats.innerHTML = '';
+            }
+        }
+        
+        // Add a new empty comparison slot
+        function addNewComparisonSlot() {
+            const newSlotNumber = Object.keys(currentSelectedParts).length + 1;
+            if (newSlotNumber > 4) return; // Limit to 4 comparisons
+            
+            const addBtn = document.createElement('div');
+            addBtn.className = 'part-card add-part-btn';
+            addBtn.id = `add-part-${newSlotNumber}`;
+            addBtn.innerHTML = `
+                <span>+</span>
+                <p>Add Component</p>
+            `;
+            addBtn.addEventListener('click', function() {
+                openPartSelection(newSlotNumber);
+            });
+            
+            comparisonContainer.appendChild(addBtn);
+        }
+        
+        // Highlight the best specs when comparing two parts
+        function highlightBestSpecs() {
+            const part1 = currentSelectedParts[1];
+            const part2 = currentSelectedParts[2];
+            
+            if (!part1 || !part2) return;
+            
+            // First remove any existing highlights
+            document.querySelectorAll('.highlight').forEach(el => {
+                el.classList.remove('highlight');
+            });
+            
+            // For each spec, compare and highlight the better one
+            Object.keys(part1.specs).forEach(spec => {
+                if (!part2.specs[spec]) return;
+                
+                // Get numeric values if possible
+                const val1 = extractNumericValue(part1.specs[spec]);
+                const val2 = extractNumericValue(part2.specs[spec]);
+                
+                if (val1 !== null && val2 !== null) {
+                    // Determine which is "better" (higher or lower depending on spec)
+                    const isHigherBetter = !['tdp', 'latency', 'price', 'voltage', 'wattage'].includes(spec);
+                    
+                    if ((isHigherBetter && val1 > val2) || (!isHigherBetter && val1 < val2)) {
+                        // Part 1 is better for this spec
+                        highlightSpecValue(1, spec, part1.specs[spec]);
+                    } else if ((isHigherBetter && val2 > val1) || (!isHigherBetter && val2 < val1)) {
+                        // Part 2 is better for this spec
+                        highlightSpecValue(2, spec, part2.specs[spec]);
+                    }
+                }
+            });
+        }
+        
+        // Helper to extract numeric value from string
+        function extractNumericValue(str) {
+            if (typeof str !== 'string') return null;
+            
+            // Extract first numeric value from string (handles "$589", "5.8 GHz", etc.)
+            const match = str.match(/\d+\.?\d*/);
+            return match ? parseFloat(match[0]) : null;
+        }
+        
+        // Helper to highlight a specific spec value
+        function highlightSpecValue(slotNumber, specName, specValue) {
+            const partCards = document.querySelectorAll('.part-card:not(.add-part-btn)');
+            
+            partCards.forEach((card, index) => {
+                if (index + 1 === slotNumber) {
+                    const specItems = card.querySelectorAll('.spec-item');
+                    
+                    specItems.forEach(item => {
+                        if (item.querySelector('.spec-name').textContent.includes(specName.replace('_', ' '))) {
+                            item.querySelector('.spec-value').classList.add('highlight');
+                        }
+                    });
+                }
+            });
+        }
+        
+        // Update comparison statistics
+        function updateComparisonStats() {
+            statsGrid.innerHTML = '';
+            
+            const partCount = Object.keys(currentSelectedParts).length;
+            
+            if (partCount === 0) {
+                statsGrid.innerHTML = `
+                    <div class="stat-card">
+                        <i class="fas fa-microchip"></i>
+                        <h3>0</h3>
+                        <p>Components Selected</p>
+                        <p class="stat-description">Add components to see detailed statistics</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Basic stats card
+            statsGrid.innerHTML += `
+                <div class="stat-card">
+                    <i class="fas fa-microchip"></i>
+                    <h3>${partCount}</h3>
+                    <p>Components Selected</p>
+                    <p class="stat-description">${Object.values(currentSelectedParts).map(p => p.category).join(' vs. ')}</p>
+                </div>
+            `;
+            
+            // If we have at least one part
+            const firstPart = currentSelectedParts[1];
+            if (firstPart) {
+                // Calculate performance per dollar
+                const price1 = extractNumericValue(firstPart.specs.price) || 1;
+                const perfPerDollar1 = (firstPart.performanceScore / price1).toFixed(2);
+                
+                statsGrid.innerHTML += `
+                    <div class="stat-card">
+                        <i class="fas fa-star"></i>
+                        <h3>${firstPart.performanceScore}</h3>
+                        <p>Performance Score</p>
+                        <p class="stat-description">Out of 100 benchmark score</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-dollar-sign"></i>
+                        <h3>${firstPart.specs.price}</h3>
+                        <p>Price</p>
+                        <p class="stat-description">Current market price</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-percentage"></i>
+                        <h3>${perfPerDollar1}</h3>
+                        <p>Performance per $</p>
+                        <p class="stat-description">Higher is better value</p>
+                    </div>
+                `;
+            }
+            
+            // If we have two parts, show comparison stats
+            const secondPart = currentSelectedParts[2];
+            if (secondPart) {
+                // Price difference
+                const price1 = extractNumericValue(firstPart.specs.price) || 0;
+                const price2 = extractNumericValue(secondPart.specs.price) || 0;
+                const priceDiff = price1 - price2;
+                const priceDiffPercent = Math.round((Math.abs(priceDiff) / ((price1 + price2) / 2)) * 100);
+                
+                // Performance difference
+                const perfDiff = firstPart.performanceScore - secondPart.performanceScore;
+                const perfDiffPercent = Math.round((Math.abs(perfDiff) / ((firstPart.performanceScore + secondPart.performanceScore) / 2)) * 100);
+                
+                // Value score (performance per dollar)
+                const value1 = calculateValueScore(firstPart);
+                const value2 = calculateValueScore(secondPart);
+                const valueDiff = value1 - value2;
+                
+                statsGrid.innerHTML += `
+                    <div class="stat-card">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <h3>${priceDiffPercent}%</h3>
+                        <p>Price Difference</p>
+                        <p class="price-difference ${priceDiff > 0 ? 'negative' : 'positive'}">
+                            ${priceDiff > 0 ? 'More expensive' : 'Less expensive'}
+                        </p>
+                        <p class="stat-description">${Math.abs(priceDiff)}$ difference</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <h3>${perfDiff > 0 ? '+' : ''}${perfDiff}</h3>
+                        <p>Performance Difference</p>
+                        <p class="price-difference ${perfDiff > 0 ? 'positive' : 'negative'}">
+                            ${perfDiff > 0 ? 'Faster' : 'Slower'}
+                        </p>
+                        <p class="stat-description">${perfDiffPercent}% difference</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-chart-line"></i>
+                        <h3>${valueDiff > 0 ? '+' : ''}${valueDiff}</h3>
+                        <p>Value Difference</p>
+                        <p class="price-difference ${valueDiff > 0 ? 'positive' : 'negative'}">
+                            ${valueDiff > 0 ? 'Better value' : 'Worse value'}
+                        </p>
+                        <p class="stat-description">Performance per dollar</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Update price statistics
+        function updatePriceStats() {
+            const part1 = currentSelectedParts[1];
+            const part2 = currentSelectedParts[2];
+            
+            if (!part1 || !part2) return;
+            
+            priceStats.innerHTML = '';
+            
+            // Calculate price statistics
+            const price1 = extractNumericValue(part1.specs.price) || 0;
+            const price2 = extractNumericValue(part2.specs.price) || 0;
+            const priceDiff = price1 - price2;
+            
+            // Calculate price drops
+            const priceDrop1 = calculatePriceDrop(part1.priceHistory);
+            const priceDrop2 = calculatePriceDrop(part2.priceHistory);
+            
+            priceStats.innerHTML = `
+                <div class="stat-card">
+                    <i class="fas fa-percentage"></i>
+                    <h3>${priceDrop1.percent}%</h3>
+                    <p>${part1.name} Price Drop</p>
+                    <p class="stat-description">$${priceDrop1.amount} since ${priceDrop1.since}</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-percentage"></i>
+                    <h3>${priceDrop2.percent}%</h3>
+                    <p>${part2.name} Price Drop</p>
+                    <p class="stat-description">$${priceDrop2.amount} since ${priceDrop2.since}</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-balance-scale"></i>
+                    <h3>$${Math.abs(priceDiff)}</h3>
+                    <p>Price Difference</p>
+                    <p class="price-difference ${priceDiff > 0 ? 'negative' : 'positive'}">
+                        ${priceDiff > 0 ? part1.name : part2.name} is more expensive
+                    </p>
+                </div>
+            `;
+        }
+        
+        // Calculate price drop percentage and amount
+        function calculatePriceDrop(priceHistory) {
+            if (!priceHistory || priceHistory.length < 2) {
+                return { percent: 0, amount: 0, since: 'N/A' };
+            }
+            
+            const firstPrice = priceHistory[0].price;
+            const lastPrice = priceHistory[priceHistory.length - 1].price;
+            const dropAmount = firstPrice - lastPrice;
+            const dropPercent = Math.round((dropAmount / firstPrice) * 100);
+            
+            return {
+                percent: dropPercent,
+                amount: dropAmount,
+                since: priceHistory[0].date
+            };
+        }
+        
+        // Calculate value score (price to performance)
+        function calculateValueScore(part) {
+            const price = extractNumericValue(part.specs.price) || 1;
+            return Math.round((part.performanceScore / price) * 100);
+        }
+        
+        // Check compatibility between components
+        function checkCompatibility() {
+            const part1 = currentSelectedParts[1];
+            const part2 = currentSelectedParts[2];
+            
+            if (!part1 || !part2) return;
+            
+            // Reset compatibility check
+            compatibilityCheck.className = 'compatibility-check hidden';
+            compatibilityCheck.classList.remove('valid', 'invalid', 'warning');
+            
+            // Simple compatibility checks based on category combinations
+            if (part1.category === 'CPU' && part2.category === 'CPU') {
+                compatibilityMessage.textContent = "You're comparing two CPUs. While interesting for performance comparison, a system only needs one CPU.";
+                compatibilityCheck.classList.add('warning');
+            } 
+            else if (part1.category === 'CPU' && part2.category === 'Motherboard') {
+                if (part1.specs.socket === part2.specs.socket) {
+                    compatibilityMessage.textContent = "Great! The CPU and motherboard are compatible (same socket type).";
+                    compatibilityCheck.classList.add('valid');
+                } else {
+                    compatibilityMessage.textContent = `Warning: The CPU (${part1.specs.socket}) and motherboard (${part2.specs.socket}) have different socket types and are not compatible.`;
+                    compatibilityCheck.classList.add('invalid');
+                }
+            }
+            else if (part1.category === 'GPU' && part2.category === 'PSU') {
+                const gpuTdp = extractNumericValue(part1.specs.tdp) || 0;
+                const psuWattage = extractNumericValue(part2.specs.wattage) || 0;
+                
+                if (psuWattage >= gpuTdp + 300) { // Simple estimation
+                    compatibilityMessage.textContent = "The PSU should have enough wattage for this GPU and the rest of your system.";
+                    compatibilityCheck.classList.add('valid');
+                } else {
+                    compatibilityMessage.textContent = `Warning: The PSU (${psuWattage}W) might not have enough wattage for this GPU (${gpuTdp}W) and the rest of your system.`;
+                    compatibilityCheck.classList.add('warning');
+                }
+            }
+            else if (part1.category === 'RAM' && part2.category === 'Motherboard') {
+                const ramType = part1.specs.memory_type || '';
+                const mbRamType = part2.specs.memory_type || '';
+                
+                if (ramType.includes(mbRamType)) {
+                    compatibilityMessage.textContent = "The RAM is compatible with the motherboard's memory type.";
+                    compatibilityCheck.classList.add('valid');
+                } else {
+                    compatibilityMessage.textContent = `Warning: The RAM (${ramType}) may not be compatible with the motherboard (${mbRamType}).`;
+                    compatibilityCheck.classList.add('warning');
+                }
+            }
+            else if (part1.category === part2.category) {
+                compatibilityMessage.textContent = `You're comparing two ${part1.category}s. This is great for performance comparison but remember you'll only need one in your build.`;
+                compatibilityCheck.classList.add('warning');
+            }
+            else {
+                compatibilityMessage.textContent = "These components should work together, but check specific requirements for optimal compatibility.";
+                compatibilityCheck.classList.add('valid');
+            }
+            
+            compatibilityCheck.classList.remove('hidden');
+        }
+
+        // Update power requirements
+        function updatePowerRequirements() {
+            let totalPower = 0;
+            let totalOverclockedPower = 0;
+            
+            // Calculate power for each component
+            for (const part of Object.values(currentSelectedParts)) {
+                if (part.powerDraw) {
+                    // Use base power if available, otherwise use TDP
+                    if (part.powerDraw.base !== undefined) {
+                        totalPower += part.powerDraw.base;
+                    } else if (part.specs.tdp) {
+                        totalPower += extractNumericValue(part.specs.tdp) || 0;
+                    }
+                    
+                    // Add overclocked power if available
+                    if (part.powerDraw.overclocked !== undefined) {
+                        totalOverclockedPower += part.powerDraw.overclocked;
+                    } else {
+                        // Estimate 20% more for overclocking if no specific data
+                        totalOverclockedPower += (extractNumericValue(part.specs.tdp) || 0) * 1.2;
+                    }
+                }
+            }
+            
+            // Add 100W for motherboard, RAM, fans, etc.
+            totalPower += 100;
+            totalOverclockedPower += 100;
+            
+            // Update display
+            if (totalPower > 0) {
+                powerRequirements.textContent = `${Math.round(totalPower)}W`;
+                overclockPower.textContent = `With overclocking: ${Math.round(totalOverclockedPower)}W`;
+            } else {
+                powerRequirements.textContent = "0W";
+                overclockPower.textContent = "With overclocking: 0W";
+            }
+        }
+
+        // Update size compatibility
+        function updateSizeCompatibility() {
+            const parts = Object.values(currentSelectedParts);
+            
+            // Check for case and GPU
+            const casePart = parts.find(p => p.category === 'Case');
+            const gpuPart = parts.find(p => p.category === 'GPU');
+            
+            if (casePart && gpuPart) {
+                const caseMaxGpuLength = extractNumericValue(casePart.specs.max_gpu_length);
+                const gpuLength = extractNumericValue(gpuPart.specs.length);
+                
+                if (caseMaxGpuLength && gpuLength) {
+                    if (gpuLength <= caseMaxGpuLength) {
+                        sizeCheckResult.innerHTML = `<span style="color: var(--success)">✓ Compatible</span>: GPU (${gpuLength}mm) fits in case (max ${caseMaxGpuLength}mm)`;
+                    } else {
+                        sizeCheckResult.innerHTML = `<span style="color: var(--danger)">✗ Incompatible</span>: GPU (${gpuLength}mm) too long for case (max ${caseMaxGpuLength}mm)`;
+                    }
+                    return;
+                }
+            }
+            
+            // Check for CPU cooler and case
+            const cpuPart = parts.find(p => p.category === 'CPU');
+            if (casePart && cpuPart) {
+                const caseMaxCoolerHeight = extractNumericValue(casePart.specs.max_cpu_cooler_height);
+                // Assume average cooler height of 160mm if not specified
+                if (caseMaxCoolerHeight) {
+                    if (160 <= caseMaxCoolerHeight) {
+                        sizeCheckResult.innerHTML = `<span style="color: var(--success)">✓ Compatible</span>: Most CPU coolers will fit (max ${caseMaxCoolerHeight}mm)`;
+                    } else {
+                        sizeCheckResult.innerHTML = `<span style="color: var(--warning)">⚠ Check cooler</span>: Some coolers may not fit (max ${caseMaxCoolerHeight}mm)`;
+                    }
+                    return;
+                }
+            }
+            
+            // Default message
+            sizeCheckResult.textContent = "Add more components to check size compatibility";
+        }
+        
+        // Switch between tabs
+        function switchTab(tabId) {
+            // Update active tab
+            tabs.forEach(t => t.classList.remove('active'));
+            document.querySelector(`.tab[data-tab="${tabId}"]`).classList.add('active');
+            
+            // Update active content
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+                if (content.id === `${tabId}-tab`) {
+                    content.classList.add('active');
+                    
+                    // Load data for this tab if needed
+                    if (tabId === 'performance' && Object.keys(currentSelectedParts).length >= 2) {
+                        updatePerformanceChart();
+                        updateBenchmarkChart();
+                    } else if (tabId === 'price' && Object.keys(currentSelectedParts).length >= 2) {
+                        updatePriceHistoryChart();
+                        updatePriceStats();
+                    } else if (tabId === 'build') {
+                        updatePowerRequirements();
+                        updateSizeCompatibility();
+                    }
+                }
+            });
+        }
+        
+        // Update performance comparison chart
+        function updatePerformanceChart() {
+            const part1 = currentSelectedParts[1];
+            const part2 = currentSelectedParts[2];
+            
+            if (!part1 || !part2) return;
+            
+            const ctx = document.getElementById('performance-chart').getContext('2d');
+            
+            if (performanceChart) {
+                performanceChart.destroy();
+            }
+            
+            performanceChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Performance', 'Power Efficiency', 'Value', 'Popularity'],
+                    datasets: [
+                        {
+                            label: part1.name,
+                            data: [
+                                part1.performanceScore,
+                                part1.powerScore,
+                                part1.valueScore,
+                                part1.popularity
+                            ],
+                            backgroundColor: 'rgba(67, 97, 238, 0.2)',
+                            borderColor: 'rgba(67, 97, 238, 1)',
+                            borderWidth: 2,
+                            pointBackgroundColor: 'rgba(67, 97, 238, 1)'
+                        },
+                        {
+                            label: part2.name,
+                            data: [
+                                part2.performanceScore,
+                                part2.powerScore,
+                                part2.valueScore,
+                                part2.popularity
+                            ],
+                            backgroundColor: 'rgba(247, 37, 133, 0.2)',
+                            borderColor: 'rgba(247, 37, 133, 1)',
+                            borderWidth: 2,
+                            pointBackgroundColor: 'rgba(247, 37, 133, 1)'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: {
+                                display: true
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 100
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Overall Performance Comparison',
+                            font: {
+                                size: 16
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Update benchmark comparison chart
+        function updateBenchmarkChart() {
+            const part1 = currentSelectedParts[1];
+            const part2 = currentSelectedParts[2];
+            
+            if (!part1 || !part2 || !part1.benchmarks || !part2.benchmarks) return;
+            
+            const ctx = document.getElementById('benchmark-chart').getContext('2d');
+            
+            if (benchmarkChart) {
+                benchmarkChart.destroy();
+            }
+            
+            // Get benchmark categories that both parts have
+            const benchmarkCategories = Object.keys(part1.benchmarks).filter(
+                key => part2.benchmarks[key] !== undefined
+            );
+            
+            benchmarkChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: benchmarkCategories.map(cat => cat.replace('_', ' ').toUpperCase()),
+                    datasets: [
+                        {
+                            label: part1.name,
+                            data: benchmarkCategories.map(cat => part1.benchmarks[cat]),
+                            backgroundColor: 'rgba(67, 97, 238, 0.7)',
+                            borderColor: 'rgba(67, 97, 238, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: part2.name,
+                            data: benchmarkCategories.map(cat => part2.benchmarks[cat]),
+                            backgroundColor: 'rgba(247, 37, 133, 0.7)',
+                            borderColor: 'rgba(247, 37, 133, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Detailed Benchmark Comparison',
+                            font: {
+                                size: 16
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Update price history chart
+        function updatePriceHistoryChart() {
+            const part1 = currentSelectedParts[1];
+            const part2 = currentSelectedParts[2];
+            
+            if (!part1 || !part2 || !part1.priceHistory || !part2.priceHistory) return;
+            
+            const priceHistoryElement = document.getElementById('price-history-chart');
+            
+            if (priceHistoryChart) {
+                priceHistoryChart.destroy();
+            }
+            
+            const options = {
+                series: [
+                    {
+                        name: part1.name,
+                        data: part1.priceHistory.map(item => item.price)
+                    },
+                    {
+                        name: part2.name,
+                        data: part2.priceHistory.map(item => item.price)
+                    }
+                ],
+                chart: {
+                    height: 350,
+                    type: 'line',
+                    zoom: {
+                        enabled: false
+                    },
+                    toolbar: {
+                        show: false
+                    }
+                },
+                dataLabels: {
+                    enabled: false
+                },
+                stroke: {
+                    curve: 'straight',
+                    width: 2
+                },
+                colors: ['#4361ee', '#f72585'],
+                title: {
+                    text: 'Price History Comparison',
+                    align: 'left',
+                    style: {
+                        fontSize: '16px',
+                        fontWeight: 'bold'
+                    }
+                },
+                grid: {
+                    row: {
+                        colors: ['#f3f3f3', 'transparent'],
+                        opacity: 0.5
+                    },
+                },
+                xaxis: {
+                    categories: part1.priceHistory.map(item => item.date),
+                    title: {
+                        text: 'Date'
+                    }
+                },
+                yaxis: {
+                    title: {
+                        text: 'Price ($)'
+                    }
+                },
+                tooltip: {
+                    y: {
+                        formatter: function(value) {
+                            return '$' + value;
+                        }
+                    }
+                }
+            };
+            
+            priceHistoryChart = new ApexCharts(priceHistoryElement, options);
+            priceHistoryChart.render();
+        }
+        
+        // Show advanced search modal (placeholder)
+        function showAdvancedSearch() {
+            alert('Advanced search functionality would be implemented here with more detailed filters.');
+        }
+        
+        // Initialize the application when DOM is loaded
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
