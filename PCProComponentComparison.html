@@ -398,7 +398,7 @@
             border-radius: 6px;
             padding: 10px;
             position: absolute;
-            z-index: 1;
+            z-index: 1000;
             bottom: 125%;
             left: 50%;
             transform: translateX(-50%);
@@ -1181,6 +1181,30 @@
             gap: 10px;
             margin-top: 20px;
         }
+
+        /* Multiselect styling */
+        select[multiple] {
+            height: auto;
+            min-height: 120px;
+            padding: 8px;
+        }
+
+        select[multiple] option {
+            padding: 8px;
+            margin: 2px 0;
+            border-radius: 4px;
+            transition: var(--transition);
+        }
+
+        select[multiple] option:hover {
+            background-color: var(--primary-light);
+            color: white;
+        }
+
+        select[multiple] option:checked {
+            background-color: var(--primary);
+            color: white;
+        }
         
         /* Responsive */
         @media (max-width: 1200px) {
@@ -1234,6 +1258,14 @@
             .modal-content {
                 width: 95%;
                 padding: 1rem;
+            }
+
+            .filter-row {
+                flex-direction: column;
+            }
+
+            .filter-column {
+                min-width: 100%;
             }
         }
         
@@ -1528,9 +1560,6 @@
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
     
-    <!-- Parts Database (would normally be in a separate file) -->
-    <script src="parts-database.js"></script>
-    
     <script>
         // DOM elements
         const categorySelect = document.getElementById('category-select');
@@ -1807,7 +1836,7 @@
         function matchesManufacturerFilter(part) {
             if (currentFilters.manufacturers.length === 0) return true;
             
-            const manufacturer = part.specs.manufacturer?.toLowerCase();
+            const manufacturer = part.specs.manufacturer?.toLowerCase() || part.brand?.toLowerCase();
             if (!manufacturer) return false;
             
             return currentFilters.manufacturers.some(m => manufacturer.includes(m));
@@ -1968,7 +1997,7 @@
         
         // Get the lowest available price for a part
         function getLowestPrice(part) {
-            if (!part.buyLinks) return 'N/A';
+            if (!part.buyLinks) return extractNumericValue(part.specs.price) || 'N/A';
             
             const prices = [];
             if (part.buyLinks.amazon) prices.push(part.buyLinks.amazon.price);
@@ -1976,7 +2005,7 @@
             if (part.buyLinks.ebay) prices.push(part.buyLinks.ebay.price);
             if (part.buyLinks.manufacturer) prices.push(part.buyLinks.manufacturer.price);
             
-            return prices.length > 0 ? Math.min(...prices) : 'N/A';
+            return prices.length > 0 ? Math.min(...prices) : extractNumericValue(part.specs.price) || 'N/A';
         }
         
         // Initialize the comparison slots
@@ -2321,6 +2350,21 @@
                         <p class="stat-description">Higher is better value</p>
                     </div>
                 `;
+                
+                // Add detailed performance metrics if available
+                if (firstPart.benchmarks) {
+                    Object.entries(firstPart.benchmarks).forEach(([benchmark, score]) => {
+                        statsGrid.innerHTML += `
+                            <div class="stat-card">
+                                <i class="fas fa-chart-line"></i>
+                                <h3>${score}</h3>
+                                <p>${benchmark.replace('_', ' ').toUpperCase()}</p>
+                                <p class="part-name">${firstPart.name}</p>
+                                <p class="stat-description">${getBenchmarkDescription(benchmark)}</p>
+                            </div>
+                        `;
+                    });
+                }
             }
             
             // If we have two parts, show comparison stats
@@ -2376,6 +2420,27 @@
             }
         }
         
+        // Get benchmark description
+        function getBenchmarkDescription(benchmark) {
+            const descriptions = {
+                cinebench_r23: "CPU multi-core performance",
+                geekbench_5: "CPU single-core performance",
+                passmark: "Overall CPU performance",
+                gaming_perf: "Relative gaming performance",
+                time_spy: "3DMark DirectX 12 performance",
+                port_royal: "Ray tracing performance",
+                ray_tracing: "Ray tracing capabilities",
+                read_speed: "Sequential read speed (MB/s)",
+                write_speed: "Sequential write speed (MB/s)",
+                iops: "Input/output operations per second",
+                endurance: "Total bytes written rating (TBW)",
+                latency: "Memory access latency (ns)",
+                stability: "Overclocking stability score"
+            };
+            
+            return descriptions[benchmark] || "Performance benchmark score";
+        }
+        
         // Update price statistics
         function updatePriceStats() {
             const part1 = currentSelectedParts[1];
@@ -2403,6 +2468,13 @@
                         <p>Price Drop</p>
                         <p class="part-name">${part1.name}</p>
                         <p class="stat-description">$${priceDrop1.amount} since ${priceDrop1.since}</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-store"></i>
+                        <h3>${countRetailers(part1)}</h3>
+                        <p>Available Retailers</p>
+                        <p class="part-name">${part1.name}</p>
+                        <p class="stat-description">Lowest price: $${getLowestPrice(part1)}</p>
                     </div>
                 `;
                 return;
@@ -2439,6 +2511,17 @@
                     </p>
                 </div>
             `;
+        }
+        
+        // Count available retailers for a part
+        function countRetailers(part) {
+            if (!part.buyLinks) return 0;
+            let count = 0;
+            if (part.buyLinks.amazon) count++;
+            if (part.buyLinks.newegg) count++;
+            if (part.buyLinks.ebay) count++;
+            if (part.buyLinks.manufacturer) count++;
+            return count;
         }
         
         // Calculate price drop percentage and amount
