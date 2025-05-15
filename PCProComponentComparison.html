@@ -82,7 +82,7 @@
             box-shadow: var(--box-shadow);
             position: relative;
             overflow: hidden;
-            z-index: 1;
+            z-index: 10;
         }
         
         header::before {
@@ -383,61 +383,79 @@
             box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
         }
 
-       .tooltip {
-    position: relative;
-    display: inline-block;
-    cursor: help;
-}
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+        }
 
-.tooltip .tooltiptext {
-    visibility: hidden;
-    width: 200px;
-    background-color: var(--dark);
-    color: var(--light);
-    text-align: center;
-    border-radius: var(--border-radius);
-    padding: 10px;
-    position: absolute;
-    z-index: 1000;
-    bottom: 125%;
-    left: 50%;
-    transform: translateX(-50%);
-    opacity: 0;
-    transition: opacity 0.3s;
-    font-size: 0.8rem;
-    font-weight: normal;
-    /* Ensure tooltip stays within viewport */
-    max-width: 200px;
-    word-wrap: break-word;
-    /* Add a small arrow */
-    pointer-events: none;
-}
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: var(--dark);
+            color: var(--light);
+            text-align: center;
+            border-radius: var(--border-radius);
+            padding: 10px;
+            position: absolute;
+            z-index: 1000;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.8rem;
+            font-weight: normal;
+            max-width: 200px;
+            word-wrap: break-word;
+            pointer-events: none;
+        }
 
-.tooltip .tooltiptext::after {
-    content: "";
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    margin-left: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: var(--dark) transparent transparent transparent;
-}
+        .tooltip .tooltiptext::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: var(--dark) transparent transparent transparent;
+        }
 
-.tooltip:hover .tooltiptext {
-    visibility: visible;
-    opacity: 1;
-}
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
 
-/* Ensure tooltips don't get cut off by overflow */
-.part-card {
-    overflow: visible !important;
-}
+        /* Ensure tooltips don't get cut off */
+        .tooltip .tooltiptext {
+            max-width: 200px;
+            white-space: normal;
+        }
 
-.comparison-container {
-    position: relative;
-    overflow: visible !important;
-}
+        .tooltip .tooltiptext.left {
+            left: auto;
+            right: 100%;
+            transform: none;
+        }
+
+        .tooltip .tooltiptext.right {
+            left: 100%;
+            right: auto;
+            transform: none;
+        }
+
+        .tooltip .tooltiptext.top {
+            bottom: auto;
+            top: 100%;
+        }
+
+        .tooltip:hover .tooltiptext.left,
+        .tooltip:hover .tooltiptext.right,
+        .tooltip:hover .tooltiptext.top {
+            visibility: visible;
+            opacity: 1;
+        }
         
         /* Results section */
         .results-section {
@@ -685,7 +703,7 @@
             min-width: 320px;
             transition: var(--transition);
             position: relative;
-            overflow: hidden;
+            overflow: visible;
             border: 1px solid var(--light-gray);
         }
 
@@ -966,7 +984,7 @@
             color: var(--gray);
             font-size: 0.9rem;
         }
-        
+
         .stat-card .stat-description {
             margin-top: 10px;
             font-size: 0.8rem;
@@ -1424,8 +1442,8 @@
                     <div class="power-requirements">
                         <h4><i class="fas fa-bolt"></i> Estimated Power Requirements</h4>
                         <div class="power-value">0W</div>
-                        <div class="power-note">Base power draw without overclocking</div>
-                        <div class="power-note" id="overclock-power">With overclocking: 0W</div>
+                        <div class="power-note">Add components to calculate power requirements</div>
+                        <div class="power-note" id="overclock-power"></div>
                     </div>
                     <div class="size-check">
                         <h4><i class="fas fa-ruler-combined"></i> Size Compatibility</h4>
@@ -1441,7 +1459,7 @@
                 <i class="fas fa-star"></i>
                 <h3>Personalized Recommendations</h3>
                 <p>Get smart recommendations based on your selected components and budget</p>
-                <button style="margin-top: 20px;"><i class="fas fa-magic"></i> Generate Recommendations</button>
+                <button id="generate-recommendations" style="margin-top: 20px;"><i class="fas fa-magic"></i> Generate Recommendations</button>
             </div>
         </section>
     </div>
@@ -1572,8 +1590,10 @@
         const priceStats = document.getElementById('price-stats');
         const toast = document.getElementById('toast');
         const powerRequirements = document.querySelector('.power-requirements .power-value');
+        const powerNote = document.querySelector('.power-requirements .power-note');
         const overclockPower = document.getElementById('overclock-power');
         const sizeCheckResult = document.getElementById('size-check-result');
+        const generateRecommendationsBtn = document.getElementById('generate-recommendations');
         
         // Modal elements
         const advancedModal = document.getElementById('advanced-search-modal');
@@ -1607,6 +1627,32 @@
             performanceLevel: '',
             releaseYear: ''
         };
+
+        // Tooltips for specs
+        const specTooltips = {
+            cores: "Number of processing cores in the CPU",
+            threads: "Number of simultaneous processing threads",
+            clock_speed: "Base operating frequency of the processor",
+            boost_clock: "Maximum turbo boost frequency",
+            tdp: "Thermal Design Power - heat output in watts",
+            socket: "CPU socket type for motherboard compatibility",
+            memory_type: "Type of RAM supported (DDR4, DDR5, etc.)",
+            memory_speed: "Supported RAM speed in MHz",
+            capacity: "Storage capacity in GB or TB",
+            interface: "Connection interface (SATA, NVMe, etc.)",
+            read_speed: "Maximum sequential read speed",
+            write_speed: "Maximum sequential write speed",
+            chipset: "Motherboard chipset model",
+            form_factor: "Physical size standard (ATX, mATX, etc.)",
+            vram: "Video RAM capacity in GB",
+            length: "Physical length in millimeters",
+            wattage: "Power supply wattage rating",
+            efficiency: "80 Plus certification level",
+            max_gpu_length: "Maximum graphics card length supported",
+            max_cpu_cooler_height: "Maximum CPU cooler height supported",
+            release_date: "Date when product was first released",
+            price: "Current market price in USD"
+        };
         
         // Initialize the app
         function init() {
@@ -1615,6 +1661,7 @@
             setupEventListeners();
             setupThemeSwitcher();
             setupAdvancedFilters();
+            setupTooltips();
         }
         
         // Set up event listeners
@@ -1624,6 +1671,7 @@
             closeModalBtn.addEventListener('click', () => advancedModal.style.display = 'none');
             applyFiltersBtn.addEventListener('click', applyAdvancedFilters);
             resetFiltersBtn.addEventListener('click', resetAdvancedFilters);
+            generateRecommendationsBtn.addEventListener('click', generateRecommendations);
             categorySelect.addEventListener('change', function() {
                 currentSearchCategory = this.value;
             });
@@ -1648,6 +1696,43 @@
                 if (e.key === 'Enter') {
                     performSearch();
                 }
+            });
+        }
+
+        // Set up tooltips
+        function setupTooltips() {
+            document.querySelectorAll('.tooltip').forEach(tooltip => {
+                tooltip.addEventListener('mouseenter', function() {
+                    const tooltipText = this.querySelector('.tooltiptext');
+                    const rect = tooltipText.getBoundingClientRect();
+                    
+                    // Reset positioning
+                    tooltipText.style.left = '50%';
+                    tooltipText.style.right = 'auto';
+                    tooltipText.style.bottom = '125%';
+                    tooltipText.style.top = 'auto';
+                    tooltipText.style.transform = 'translateX(-50%)';
+                    
+                    // Check if tooltip would go off the right edge
+                    if (rect.right > window.innerWidth) {
+                        tooltipText.style.left = 'auto';
+                        tooltipText.style.right = '0';
+                        tooltipText.style.transform = 'none';
+                    }
+                    
+                    // Check if tooltip would go off the left edge
+                    if (rect.left < 0) {
+                        tooltipText.style.left = '0';
+                        tooltipText.style.transform = 'none';
+                    }
+                    
+                    // Check if tooltip would go off the top
+                    if (rect.top < 0) {
+                        tooltipText.style.bottom = 'auto';
+                        tooltipText.style.top = '100%';
+                        tooltipText.style.transform = 'translateX(-50%)';
+                    }
+                });
             });
         }
 
@@ -1754,11 +1839,115 @@
             };
         }
         
+        // Generate recommendations
+        function generateRecommendations() {
+            if (Object.keys(currentSelectedParts).length === 0) {
+                showToast("Please add some components first to get personalized recommendations", "warning");
+                return;
+            }
+            
+            // Simulate loading recommendations
+            showToast("Generating recommendations based on your selected components...", "");
+            
+            // Simulate API call delay
+            setTimeout(() => {
+                // Sample recommendations based on selected parts
+                const categories = Object.values(currentSelectedParts).map(p => p.category);
+                let recommendations = [];
+                
+                if (categories.includes('cpu') && !categories.includes('motherboard')) {
+                    recommendations.push({
+                        name: "Compatible Motherboard",
+                        description: "Based on your CPU selection, we recommend a compatible motherboard",
+                        category: "motherboard"
+                    });
+                }
+                
+                if (categories.includes('gpu') && !categories.includes('psu')) {
+                    recommendations.push({
+                        name: "Power Supply Unit",
+                        description: "A high-quality PSU to power your GPU and system",
+                        category: "psu"
+                    });
+                }
+                
+                if (categories.includes('motherboard') && !categories.includes('ram')) {
+                    recommendations.push({
+                        name: "RAM Kit",
+                        description: "Fast memory compatible with your motherboard",
+                        category: "ram"
+                    });
+                }
+                
+                if (recommendations.length === 0) {
+                    recommendations.push({
+                        name: "SSD Storage",
+                        description: "Fast NVMe SSD for your operating system and applications",
+                        category: "storage"
+                    });
+                    recommendations.push({
+                        name: "CPU Cooler",
+                        description: "Efficient cooling solution for your processor",
+                        category: "cooling"
+                    });
+                    recommendations.push({
+                        name: "PC Case",
+                        description: "Stylish case with good airflow for your components",
+                        category: "case"
+                    });
+                }
+                
+                showToast(`Generated ${recommendations.length} recommendations!`, "success");
+                
+                // Display recommendations in the empty state section
+                const emptyState = document.querySelector('.empty-state');
+                emptyState.innerHTML = `
+                    <h3>Recommended Components</h3>
+                    <div class="part-list" style="margin-top: 20px;">
+                        ${recommendations.map(rec => `
+                            <div class="part-list-item">
+                                <h4>${rec.name}</h4>
+                                <span class="category-badge">${rec.category}</span>
+                                <p style="margin-top: 10px; font-size: 0.9rem;">${rec.description}</p>
+                                <button style="margin-top: 15px; width: 100%;" onclick="addRecommendedPart('${rec.category}')">
+                                    <i class="fas fa-plus"></i> Add to Comparison
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                
+                // Add the function to global scope so it can be called from the button
+                window.addRecommendedPart = function(category) {
+                    // Find a random part from this category
+                    if (partsDatabase[category] && partsDatabase[category].length > 0) {
+                        const randomPart = partsDatabase[category][Math.floor(Math.random() * partsDatabase[category].length)];
+                        
+                        // Find the next available slot
+                        let nextSlot = 1;
+                        while (currentSelectedParts[nextSlot] && nextSlot < 6) {
+                            nextSlot++;
+                        }
+                        
+                        if (nextSlot <= 6) {
+                            addPartToComparison(randomPart, nextSlot);
+                            showToast(`Added ${randomPart.name} to comparison`, "success");
+                        } else {
+                            showToast("Maximum of 6 components reached", "warning");
+                        }
+                    } else {
+                        showToast(`No ${category} parts found in database`, "error");
+                    }
+                };
+                
+            }, 1500);
+        }
+        
         // Show toast notification
         function showToast(message, type = '') {
             toast.textContent = message;
             toast.className = 'toast';
-            toast.classList.add(type);
+            if (type) toast.classList.add(type);
             toast.classList.add('show');
             
             setTimeout(() => {
@@ -1902,39 +2091,6 @@
                     return true;
             }
         }
-
-        // Add this to your init() function or somewhere early in your script
-function setupTooltips() {
-    document.querySelectorAll('.tooltip').forEach(tooltip => {
-        tooltip.addEventListener('mouseenter', function() {
-            const tooltipText = this.querySelector('.tooltiptext');
-            const rect = tooltipText.getBoundingClientRect();
-            
-            // Check if tooltip would go off the right edge
-            if (rect.right > window.innerWidth) {
-                tooltipText.style.left = 'auto';
-                tooltipText.style.right = '0';
-                tooltipText.style.transform = 'none';
-            }
-            
-            // Check if tooltip would go off the left edge
-            if (rect.left < 0) {
-                tooltipText.style.left = '0';
-                tooltipText.style.transform = 'none';
-            }
-            
-            // Check if tooltip would go off the top
-            if (rect.top < 0) {
-                tooltipText.style.bottom = 'auto';
-                tooltipText.style.top = '100%';
-                tooltipText.style.transform = 'translateX(-50%)';
-                
-                // Adjust arrow position
-                tooltipText.style.setProperty('--arrow-position', 'bottom: auto; top: -5px; border-color: transparent transparent var(--dark) transparent;');
-            }
-        });
-    });
-}
         
         // Display search results
         function displaySearchResults(parts) {
@@ -2067,7 +2223,6 @@ function setupTooltips() {
                     showToast(`This part is already in slot ${slot}`, 'error');
                     return;
                 }
-                setupTooltips();
             }
             
             const slot = document.getElementById(`add-part-${slotNumber}`);
@@ -2105,7 +2260,6 @@ function setupTooltips() {
                     </div>
                 `;
             }
-            
             
             // Create part card with tooltips for specs
             const partCard = document.createElement('div');
@@ -2145,9 +2299,12 @@ function setupTooltips() {
             // Store the selected part
             currentSelectedParts[slotNumber] = part;
             
-            // Add a new empty slot if we've filled the last one
-            if (Object.keys(currentSelectedParts).length === 2) {
-                addNewComparisonSlot();
+            // Add a new empty slot if we've filled all existing slots (up to max 6)
+            const currentSlotCount = Object.keys(currentSelectedParts).length;
+            const nextSlot = currentSlotCount + 1;
+            
+            if (nextSlot <= 6 && !document.getElementById(`add-part-${nextSlot}`)) {
+                addNewComparisonSlot(nextSlot);
             }
             
             // Update statistics and visualizations
@@ -2178,6 +2335,24 @@ function setupTooltips() {
             }
         }
         
+        // Add a new empty comparison slot
+        function addNewComparisonSlot(slotNumber) {
+            if (slotNumber > 6) return; // Limit to 6 comparisons
+            
+            const addBtn = document.createElement('div');
+            addBtn.className = 'part-card add-part-btn';
+            addBtn.id = `add-part-${slotNumber}`;
+            addBtn.innerHTML = `
+                <span>+</span>
+                <p>Add Component</p>
+            `;
+            addBtn.addEventListener('click', function() {
+                openPartSelection(slotNumber);
+            });
+            
+            comparisonContainer.appendChild(addBtn);
+        }
+        
         // Remove a part from comparison
         function removePartFromComparison(slotNumber) {
             const partCard = document.querySelector(`.part-card button[data-slot="${slotNumber}"]`);
@@ -2191,7 +2366,7 @@ function setupTooltips() {
             addBtn.id = `add-part-${slotNumber}`;
             addBtn.innerHTML = `
                 <span>+</span>
-                <p>Add ${slotNumber === 1 ? 'First' : 'Second'} Component</p>
+                <p>Add ${slotNumber === 1 ? 'First' : slotNumber === 2 ? 'Second' : 'Component'}</p>
             `;
             addBtn.addEventListener('click', function() {
                 openPartSelection(slotNumber);
@@ -2211,6 +2386,17 @@ function setupTooltips() {
             // Hide compatibility check if we don't have two parts
             if (Object.keys(currentSelectedParts).length < 2) {
                 compatibilityCheck.classList.add('hidden');
+            }
+            
+            // Remove any empty slots beyond the first two if they're not needed
+            const currentSlotCount = Object.keys(currentSelectedParts).length;
+            if (currentSlotCount <= 2) {
+                for (let i = 3; i <= 6; i++) {
+                    const slot = document.getElementById(`add-part-${i}`);
+                    if (slot) {
+                        slot.remove();
+                    }
+                }
             }
             
             // Update statistics
@@ -2234,25 +2420,6 @@ function setupTooltips() {
                 }
                 priceStats.innerHTML = '';
             }
-        }
-        
-        // Add a new empty comparison slot
-        function addNewComparisonSlot() {
-            const newSlotNumber = Object.keys(currentSelectedParts).length + 1;
-            if (newSlotNumber > 4) return; // Limit to 4 comparisons
-            
-            const addBtn = document.createElement('div');
-            addBtn.className = 'part-card add-part-btn';
-            addBtn.id = `add-part-${newSlotNumber}`;
-            addBtn.innerHTML = `
-                <span>+</span>
-                <p>Add Component</p>
-            `;
-            addBtn.addEventListener('click', function() {
-                openPartSelection(newSlotNumber);
-            });
-            
-            comparisonContainer.appendChild(addBtn);
         }
         
         // Highlight the best specs when comparing two parts
@@ -2380,15 +2547,15 @@ function setupTooltips() {
             // If we have two parts, show comparison stats
             const secondPart = currentSelectedParts[2];
             if (secondPart) {
-               // Price difference
-const price1 = getLowestPrice(firstPart);
-const price2 = getLowestPrice(secondPart);
-const priceDiff = price1 - price2;
-const priceDiffPercent = Math.round((Math.abs(priceDiff) / ((price1 + price2) / 2)) * 100);
+                // Price difference
+                const price1 = getLowestPrice(firstPart);
+                const price2 = getLowestPrice(secondPart);
+                const priceDiff = price1 - price2;
+                const priceDiffPercent = Math.round((Math.abs(priceDiff) / ((price1 + price2) / 2) * 100);
 
-// Performance difference
-const perfDiff = firstPart.performanceScore - secondPart.performanceScore;
-const perfDiffPercent = Math.round((Math.abs(perfDiff) / ((firstPart.performanceScore + secondPart.performanceScore) / 2)) * 100);
+                // Performance difference
+                const perfDiff = firstPart.performanceScore - secondPart.performanceScore;
+                const perfDiffPercent = Math.round((Math.abs(perfDiff) / ((firstPart.performanceScore + secondPart.performanceScore) / 2) * 100);
                 
                 // Value score (performance per dollar)
                 const value1 = calculateValueScore(firstPart);
@@ -2488,7 +2655,7 @@ const perfDiffPercent = Math.round((Math.abs(perfDiff) / ((firstPart.performance
                     <i class="fas fa-balance-scale"></i>
                     <h3>$${Math.abs(priceDiff)}</h3>
                     <p>Price Difference</p>
-                    <p class="part-name">${firstPart.name} vs ${secondPart.name}</p>
+                    <p class="part-name">${part1.name} vs ${part2.name}</p>
                     <p class="price-difference ${priceDiff > 0 ? 'negative' : 'positive'}">
                         ${priceDiff > 0 ? part1.name : part2.name} is more expensive
                     </p>
@@ -2589,10 +2756,12 @@ const perfDiffPercent = Math.round((Math.abs(perfDiff) / ((firstPart.performance
         function updatePowerRequirements() {
             let totalPower = 0;
             let totalOverclockedPower = 0;
+            let hasPowerComponents = false;
             
             // Calculate power for each component
             for (const part of Object.values(currentSelectedParts)) {
                 if (part.powerDraw) {
+                    hasPowerComponents = true;
                     // Use base power if available, otherwise use TDP
                     if (part.powerDraw.base !== undefined) {
                         totalPower += part.powerDraw.base;
@@ -2610,17 +2779,19 @@ const perfDiffPercent = Math.round((Math.abs(perfDiff) / ((firstPart.performance
                 }
             }
             
-            // Add 100W for motherboard, RAM, fans, etc.
-            totalPower += 100;
-            totalOverclockedPower += 100;
-            
             // Update display
-            if (totalPower > 0) {
+            if (hasPowerComponents) {
+                // Add 100W for motherboard, RAM, fans, etc. only if we have power-drawing components
+                totalPower += 100;
+                totalOverclockedPower += 100;
+                
                 powerRequirements.textContent = `${Math.round(totalPower)}W`;
+                powerNote.textContent = "Base power draw without overclocking";
                 overclockPower.textContent = `With overclocking: ${Math.round(totalOverclockedPower)}W`;
             } else {
                 powerRequirements.textContent = "0W";
-                overclockPower.textContent = "With overclocking: 0W";
+                powerNote.textContent = "Add components to calculate power requirements";
+                overclockPower.textContent = "";
             }
         }
 
