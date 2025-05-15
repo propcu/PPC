@@ -1181,30 +1181,6 @@
             gap: 10px;
             margin-top: 20px;
         }
-
-        /* Multiselect styling */
-        select[multiple] {
-            height: auto;
-            min-height: 120px;
-            padding: 8px;
-        }
-
-        select[multiple] option {
-            padding: 8px;
-            margin: 2px 0;
-            border-radius: 4px;
-            transition: var(--transition);
-        }
-
-        select[multiple] option:hover {
-            background-color: var(--primary-light);
-            color: white;
-        }
-
-        select[multiple] option:checked {
-            background-color: var(--primary);
-            color: white;
-        }
         
         /* Responsive */
         @media (max-width: 1200px) {
@@ -1258,14 +1234,6 @@
             .modal-content {
                 width: 95%;
                 padding: 1rem;
-            }
-
-            .filter-row {
-                flex-direction: column;
-            }
-
-            .filter-column {
-                min-width: 100%;
             }
         }
         
@@ -1619,12 +1587,6 @@
             setupEventListeners();
             setupThemeSwitcher();
             setupAdvancedFilters();
-            
-            // For demo purposes, pre-add two parts
-            setTimeout(() => {
-                addPartToComparison(partsDatabase.cpu[0], 1);
-                addPartToComparison(partsDatabase.gpu[0], 2);
-            }, 500);
         }
         
         // Set up event listeners
@@ -1836,7 +1798,7 @@
         function matchesManufacturerFilter(part) {
             if (currentFilters.manufacturers.length === 0) return true;
             
-            const manufacturer = part.specs.manufacturer?.toLowerCase() || part.brand?.toLowerCase();
+            const manufacturer = part.specs.manufacturer?.toLowerCase();
             if (!manufacturer) return false;
             
             return currentFilters.manufacturers.some(m => manufacturer.includes(m));
@@ -1997,7 +1959,7 @@
         
         // Get the lowest available price for a part
         function getLowestPrice(part) {
-            if (!part.buyLinks) return extractNumericValue(part.specs.price) || 'N/A';
+            if (!part.buyLinks) return 'N/A';
             
             const prices = [];
             if (part.buyLinks.amazon) prices.push(part.buyLinks.amazon.price);
@@ -2005,7 +1967,7 @@
             if (part.buyLinks.ebay) prices.push(part.buyLinks.ebay.price);
             if (part.buyLinks.manufacturer) prices.push(part.buyLinks.manufacturer.price);
             
-            return prices.length > 0 ? Math.min(...prices) : extractNumericValue(part.specs.price) || 'N/A';
+            return prices.length > 0 ? Math.min(...prices) : 'N/A';
         }
         
         // Initialize the comparison slots
@@ -2350,21 +2312,6 @@
                         <p class="stat-description">Higher is better value</p>
                     </div>
                 `;
-                
-                // Add detailed performance metrics if available
-                if (firstPart.benchmarks) {
-                    Object.entries(firstPart.benchmarks).forEach(([benchmark, score]) => {
-                        statsGrid.innerHTML += `
-                            <div class="stat-card">
-                                <i class="fas fa-chart-line"></i>
-                                <h3>${score}</h3>
-                                <p>${benchmark.replace('_', ' ').toUpperCase()}</p>
-                                <p class="part-name">${firstPart.name}</p>
-                                <p class="stat-description">${getBenchmarkDescription(benchmark)}</p>
-                            </div>
-                        `;
-                    });
-                }
             }
             
             // If we have two parts, show comparison stats
@@ -2420,27 +2367,6 @@
             }
         }
         
-        // Get benchmark description
-        function getBenchmarkDescription(benchmark) {
-            const descriptions = {
-                cinebench_r23: "CPU multi-core performance",
-                geekbench_5: "CPU single-core performance",
-                passmark: "Overall CPU performance",
-                gaming_perf: "Relative gaming performance",
-                time_spy: "3DMark DirectX 12 performance",
-                port_royal: "Ray tracing performance",
-                ray_tracing: "Ray tracing capabilities",
-                read_speed: "Sequential read speed (MB/s)",
-                write_speed: "Sequential write speed (MB/s)",
-                iops: "Input/output operations per second",
-                endurance: "Total bytes written rating (TBW)",
-                latency: "Memory access latency (ns)",
-                stability: "Overclocking stability score"
-            };
-            
-            return descriptions[benchmark] || "Performance benchmark score";
-        }
-        
         // Update price statistics
         function updatePriceStats() {
             const part1 = currentSelectedParts[1];
@@ -2468,13 +2394,6 @@
                         <p>Price Drop</p>
                         <p class="part-name">${part1.name}</p>
                         <p class="stat-description">$${priceDrop1.amount} since ${priceDrop1.since}</p>
-                    </div>
-                    <div class="stat-card">
-                        <i class="fas fa-store"></i>
-                        <h3>${countRetailers(part1)}</h3>
-                        <p>Available Retailers</p>
-                        <p class="part-name">${part1.name}</p>
-                        <p class="stat-description">Lowest price: $${getLowestPrice(part1)}</p>
                     </div>
                 `;
                 return;
@@ -2506,22 +2425,12 @@
                     <i class="fas fa-balance-scale"></i>
                     <h3>$${Math.abs(priceDiff)}</h3>
                     <p>Price Difference</p>
+                    <p class="part-name">${firstPart.name} vs ${secondPart.name}</p>
                     <p class="price-difference ${priceDiff > 0 ? 'negative' : 'positive'}">
                         ${priceDiff > 0 ? part1.name : part2.name} is more expensive
                     </p>
                 </div>
             `;
-        }
-        
-        // Count available retailers for a part
-        function countRetailers(part) {
-            if (!part.buyLinks) return 0;
-            let count = 0;
-            if (part.buyLinks.amazon) count++;
-            if (part.buyLinks.newegg) count++;
-            if (part.buyLinks.ebay) count++;
-            if (part.buyLinks.manufacturer) count++;
-            return count;
         }
         
         // Calculate price drop percentage and amount
@@ -2737,52 +2646,103 @@
             
             // Single part view
             if (!part2) {
-                performanceChart = new Chart(ctx, {
-                    type: 'radar',
-                    data: {
-                        labels: ['Performance', 'Power Efficiency', 'Value', 'Popularity'],
-                        datasets: [
-                            {
-                                label: part1.name,
-                                data: [
-                                    part1.performanceScore,
-                                    part1.powerScore,
-                                    part1.valueScore,
-                                    part1.popularity
-                                ],
-                                backgroundColor: 'rgba(67, 97, 238, 0.2)',
-                                borderColor: 'rgba(67, 97, 238, 1)',
-                                borderWidth: 2,
-                                pointBackgroundColor: 'rgba(67, 97, 238, 1)'
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            r: {
-                                angleLines: {
-                                    display: true
-                                },
-                                suggestedMin: 0,
-                                suggestedMax: 100
-                            }
+                if (!part1) return;
+                
+                // Get benchmark categories if available
+                const benchmarkCategories = part1.benchmarks ? Object.keys(part1.benchmarks) : [];
+                
+                if (benchmarkCategories.length > 0) {
+                    // Create radar chart with benchmark data
+                    performanceChart = new Chart(ctx, {
+                        type: 'radar',
+                        data: {
+                            labels: benchmarkCategories.map(cat => cat.replace('_', ' ').toUpperCase()),
+                            datasets: [
+                                {
+                                    label: part1.name,
+                                    data: benchmarkCategories.map(cat => part1.benchmarks[cat]),
+                                    backgroundColor: 'rgba(67, 97, 238, 0.2)',
+                                    borderColor: 'rgba(67, 97, 238, 1)',
+                                    borderWidth: 2,
+                                    pointBackgroundColor: 'rgba(67, 97, 238, 1)'
+                                }
+                            ]
                         },
-                        plugins: {
-                            legend: {
-                                position: 'top',
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                r: {
+                                    angleLines: {
+                                        display: true
+                                    },
+                                    suggestedMin: 0,
+                                    suggestedMax: 100
+                                }
                             },
-                            title: {
-                                display: true,
-                                text: 'Performance Overview',
-                                font: {
-                                    size: 16
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Performance Overview',
+                                    font: {
+                                        size: 16
+                                    }
                                 }
                             }
                         }
-                    }
-                });
+                    });
+                } else {
+                    // Fallback to basic performance metrics
+                    performanceChart = new Chart(ctx, {
+                        type: 'radar',
+                        data: {
+                            labels: ['Performance', 'Power Efficiency', 'Value', 'Popularity'],
+                            datasets: [
+                                {
+                                    label: part1.name,
+                                    data: [
+                                        part1.performanceScore,
+                                        part1.powerScore,
+                                        part1.valueScore,
+                                        part1.popularity
+                                    ],
+                                    backgroundColor: 'rgba(67, 97, 238, 0.2)',
+                                    borderColor: 'rgba(67, 97, 238, 1)',
+                                    borderWidth: 2,
+                                    pointBackgroundColor: 'rgba(67, 97, 238, 1)'
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                r: {
+                                    angleLines: {
+                                        display: true
+                                    },
+                                    suggestedMin: 0,
+                                    suggestedMax: 100
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Performance Overview',
+                                    font: {
+                                        size: 16
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
                 return;
             }
             
@@ -2861,7 +2821,7 @@
             
             // Single part view
             if (!part2) {
-                if (!part1.benchmarks) return;
+                if (!part1 || !part1.benchmarks) return;
                 
                 // Get benchmark categories
                 const benchmarkCategories = Object.keys(part1.benchmarks);
@@ -2971,7 +2931,7 @@
             
             // Single part view
             if (!part2) {
-                if (!part1.priceHistory) return;
+                if (!part1 || !part1.priceHistory) return;
                 
                 const options = {
                     series: [{
