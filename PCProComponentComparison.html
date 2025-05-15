@@ -2456,121 +2456,153 @@
             });
         }
         
-        // Update comparison statistics
-        function updateComparisonStats() {
-            statsGrid.innerHTML = '';
-            
-            const partCount = Object.keys(currentSelectedParts).length;
-            
-            if (partCount === 0) {
-                statsGrid.innerHTML = `
-                    <div class="stat-card">
-                        <i class="fas fa-microchip"></i>
-                        <h3>0</h3>
-                        <p>Components Selected</p>
-                        <p class="stat-description">Add components to see detailed statistics</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            // Basic stats card
-            statsGrid.innerHTML += `
-                <div class="stat-card">
-                    <i class="fas fa-microchip"></i>
-                    <h3>${partCount}</h3>
-                    <p>Components Selected</p>
-                    <p class="stat-description">${Object.values(currentSelectedParts).map(p => p.category).join(' vs. ')}</p>
+// Update comparison statistics and sections
+function updateComparisonStats() {
+    statsGrid.innerHTML = '';
+    
+    const partCount = Object.keys(currentSelectedParts).length;
+    
+    if (partCount === 0) {
+        statsGrid.innerHTML = `
+            <div class="stat-card">
+                <i class="fas fa-microchip"></i>
+                <h3>0</h3>
+                <p>Components Selected</p>
+                <p class="stat-description">Add components to see detailed statistics</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Group parts by category
+    const partsByCategory = {};
+    Object.values(currentSelectedParts).forEach(part => {
+        if (!partsByCategory[part.category]) {
+            partsByCategory[part.category] = [];
+        }
+        partsByCategory[part.category].push(part);
+    });
+    
+    // Create comparison sections for each category
+    for (const [category, parts] of Object.entries(partsByCategory)) {
+        if (parts.length > 1) {
+            // Only create comparison sections if we have at least 2 parts of same type
+            const section = document.createElement('div');
+            section.className = 'comparison-section';
+            section.style.gridColumn = '1 / -1';
+            section.style.marginTop = '20px';
+            section.innerHTML = `
+                <h3 style="color: var(--primary); margin-bottom: 15px;">
+                    <i class="fas fa-balance-scale"></i> ${category.toUpperCase()} Comparison
+                </h3>
+                <div class="stats-grid">
+                    ${createComparisonStatsForCategory(category, parts)}
                 </div>
             `;
-            
-            // If we have at least one part
-            const firstPart = currentSelectedParts[1];
-            if (firstPart) {
-                // Calculate performance per dollar
-                const lowestPrice = getLowestPrice(firstPart);
-                const price1 = typeof lowestPrice === 'number' ? lowestPrice : extractNumericValue(firstPart.specs.price) || 1;
-                const perfPerDollar1 = (firstPart.performanceScore / price1).toFixed(2);
-                
-                statsGrid.innerHTML += `
-                    <div class="stat-card">
-                        <i class="fas fa-star"></i>
-                        <h3>${firstPart.performanceScore}</h3>
-                        <p>Performance Score</p>
-                        <p class="part-name">${firstPart.name}</p>
-                        <p class="stat-description">Out of 100 benchmark score</p>
-                    </div>
-                    <div class="stat-card">
-                        <i class="fas fa-dollar-sign"></i>
-                        <h3>$${price1}</h3>
-                        <p>Best Price</p>
-                        <p class="part-name">${firstPart.name}</p>
-                        <p class="stat-description">Current market price</p>
-                    </div>
-                    <div class="stat-card">
-                        <i class="fas fa-percentage"></i>
-                        <h3>${perfPerDollar1}</h3>
-                        <p>Performance per $</p>
-                        <p class="part-name">${firstPart.name}</p>
-                        <p class="stat-description">Higher is better value</p>
-                    </div>
-                `;
-            }
-            
-            // If we have two parts, show comparison stats
-            const secondPart = currentSelectedParts[2];
-            if (secondPart) {
-                // Price difference
-                const price1 = getLowestPrice(firstPart);
-                const price2 = getLowestPrice(secondPart);
-                const priceDiff = price1 - price2;
-                const priceDiffPercent = Math.round((Math.abs(priceDiff) / ((price1 + price2) / 2)) * 100);
-
-
-                // Performance difference
-                const perfDiff = firstPart.performanceScore - secondPart.performanceScore;
-                const perfDiffPercent = Math.round((Math.abs(perfDiff) / ((firstPart.performanceScore + secondPart.performanceScore) / 2)) * 100);
-
-                
-                // Value score (performance per dollar)
-                const value1 = calculateValueScore(firstPart);
-                const value2 = calculateValueScore(secondPart);
-                const valueDiff = value1 - value2;
-                
-                statsGrid.innerHTML += `
-                    <div class="stat-card">
-                        <i class="fas fa-money-bill-wave"></i>
-                        <h3>${priceDiffPercent}%</h3>
-                        <p>Price Difference</p>
-                        <p class="part-name">${firstPart.name} vs ${secondPart.name}</p>
-                        <p class="price-difference ${priceDiff > 0 ? 'negative' : 'positive'}">
-                            ${priceDiff > 0 ? 'More expensive' : 'Less expensive'}
-                        </p>
-                        <p class="stat-description">$${Math.abs(priceDiff)} difference</p>
-                    </div>
-                    <div class="stat-card">
-                        <i class="fas fa-tachometer-alt"></i>
-                        <h3>${perfDiff > 0 ? '+' : ''}${perfDiff}</h3>
-                        <p>Performance Difference</p>
-                        <p class="part-name">${firstPart.name} vs ${secondPart.name}</p>
-                        <p class="price-difference ${perfDiff > 0 ? 'positive' : 'negative'}">
-                            ${perfDiff > 0 ? 'Faster' : 'Slower'}
-                        </p>
-                        <p class="stat-description">${perfDiffPercent}% difference</p>
-                    </div>
-                    <div class="stat-card">
-                        <i class="fas fa-chart-line"></i>
-                        <h3>${valueDiff > 0 ? '+' : ''}${valueDiff}</h3>
-                        <p>Value Difference</p>
-                        <p class="part-name">${firstPart.name} vs ${secondPart.name}</p>
-                        <p class="price-difference ${valueDiff > 0 ? 'positive' : 'negative'}">
-                            ${valueDiff > 0 ? 'Better value' : 'Worse value'}
-                        </p>
-                        <p class="stat-description">Performance per dollar</p>
-                    </div>
-                `;
-            }
+            statsGrid.appendChild(section);
         }
+    }
+    
+    // Basic stats card
+    statsGrid.innerHTML += `
+        <div class="stat-card">
+            <i class="fas fa-microchip"></i>
+            <h3>${partCount}</h3>
+            <p>Components Selected</p>
+            <p class="stat-description">${Object.keys(partsByCategory).join(', ')}</p>
+        </div>
+    `;
+    
+    // Add individual part stats if we have only one of a type
+    for (const [category, parts] of Object.entries(partsByCategory)) {
+        if (parts.length === 1) {
+            const part = parts[0];
+            const lowestPrice = getLowestPrice(part);
+            const price1 = typeof lowestPrice === 'number' ? lowestPrice : extractNumericValue(part.specs.price) || 1;
+            const perfPerDollar1 = (part.performanceScore / price1).toFixed(2);
+            
+            statsGrid.innerHTML += `
+                <div class="stat-card">
+                    <i class="fas fa-star"></i>
+                    <h3>${part.performanceScore}</h3>
+                    <p>Performance Score</p>
+                    <p class="part-name">${part.name}</p>
+                    <p class="stat-description">Out of 100 benchmark score</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-dollar-sign"></i>
+                    <h3>$${price1}</h3>
+                    <p>Best Price</p>
+                    <p class="part-name">${part.name}</p>
+                    <p class="stat-description">Current market price</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-percentage"></i>
+                    <h3>${perfPerDollar1}</h3>
+                    <p>Performance per $</p>
+                    <p class="part-name">${part.name}</p>
+                    <p class="stat-description">Higher is better value</p>
+                </div>
+            `;
+        }
+    }
+}
+
+// Helper to create comparison stats for a specific category
+function createComparisonStatsForCategory(category, parts) {
+    if (parts.length < 2) return '';
+    
+    const part1 = parts[0];
+    const part2 = parts[1];
+    
+    // Price difference
+    const price1 = getLowestPrice(part1);
+    const price2 = getLowestPrice(part2);
+    const priceDiff = price1 - price2;
+    const priceDiffPercent = Math.round((Math.abs(priceDiff) / ((price1 + price2) / 2) * 100);
+
+    // Performance difference
+    const perfDiff = part1.performanceScore - part2.performanceScore;
+    const perfDiffPercent = Math.round((Math.abs(perfDiff) / ((part1.performanceScore + part2.performanceScore) / 2) * 100);
+
+    // Value score (performance per dollar)
+    const value1 = calculateValueScore(part1);
+    const value2 = calculateValueScore(part2);
+    const valueDiff = value1 - value2;
+    
+    return `
+        <div class="stat-card">
+            <i class="fas fa-money-bill-wave"></i>
+            <h3>${priceDiffPercent}%</h3>
+            <p>Price Difference</p>
+            <p class="part-name">${part1.name} vs ${part2.name}</p>
+            <p class="price-difference ${priceDiff > 0 ? 'negative' : 'positive'}">
+                ${priceDiff > 0 ? 'More expensive' : 'Less expensive'}
+            </p>
+            <p class="stat-description">$${Math.abs(priceDiff)} difference</p>
+        </div>
+        <div class="stat-card">
+            <i class="fas fa-tachometer-alt"></i>
+            <h3>${perfDiff > 0 ? '+' : ''}${perfDiff}</h3>
+            <p>Performance Difference</p>
+            <p class="part-name">${part1.name} vs ${part2.name}</p>
+            <p class="price-difference ${perfDiff > 0 ? 'positive' : 'negative'}">
+                ${perfDiff > 0 ? 'Faster' : 'Slower'}
+            </p>
+            <p class="stat-description">${perfDiffPercent}% difference</p>
+        </div>
+        <div class="stat-card">
+            <i class="fas fa-chart-line"></i>
+            <h3>${valueDiff > 0 ? '+' : ''}${valueDiff}</h3>
+            <p>Value Difference</p>
+            <p class="part-name">${part1.name} vs ${part2.name}</p>
+            <p class="price-difference ${valueDiff > 0 ? 'positive' : 'negative'}">
+                ${valueDiff > 0 ? 'Better value' : 'Worse value'}
+            </p>
+            <p class="stat-description">Performance per dollar</p>
+        </div>
+    `;
+}
         
         // Update price statistics
         function updatePriceStats() {
