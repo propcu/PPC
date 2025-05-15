@@ -2551,11 +2551,13 @@
                 const price1 = getLowestPrice(firstPart);
                 const price2 = getLowestPrice(secondPart);
                 const priceDiff = price1 - price2;
-                const priceDiffPercent = Math.round((Math.abs(priceDiff) / ((price1 + price2) / 2) * 100));
+                const priceDiffPercent = Math.round((Math.abs(priceDiff) / ((price1 + price2) / 2)) * 100);
+
 
                 // Performance difference
                 const perfDiff = firstPart.performanceScore - secondPart.performanceScore;
-                const perfDiffPercent = Math.round((Math.abs(perfDiff) / ((firstPart.performanceScore + secondPart.performanceScore) / 2) * 100));
+                const perfDiffPercent = Math.round((Math.abs(perfDiff) / ((firstPart.performanceScore + secondPart.performanceScore) / 2)) * 100);
+
                 
                 // Value score (performance per dollar)
                 const value1 = calculateValueScore(firstPart);
