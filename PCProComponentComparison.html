@@ -383,35 +383,61 @@
             box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
         }
 
-        /* Tooltip */
-        .tooltip {
-            position: relative;
-            display: inline-block;
-        }
+       .tooltip {
+    position: relative;
+    display: inline-block;
+    cursor: help;
+}
 
-        .tooltip .tooltiptext {
-            visibility: hidden;
-            width: 200px;
-            background-color: var(--dark);
-            color: var(--light);
-            text-align: center;
-            border-radius: 6px;
-            padding: 10px;
-            position: absolute;
-            z-index: 1000;
-            bottom: 125%;
-            left: 50%;
-            transform: translateX(-50%);
-            opacity: 0;
-            transition: opacity 0.3s;
-            font-size: 0.8rem;
-            font-weight: normal;
-        }
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 200px;
+    background-color: var(--dark);
+    color: var(--light);
+    text-align: center;
+    border-radius: var(--border-radius);
+    padding: 10px;
+    position: absolute;
+    z-index: 1000;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 0.8rem;
+    font-weight: normal;
+    /* Ensure tooltip stays within viewport */
+    max-width: 200px;
+    word-wrap: break-word;
+    /* Add a small arrow */
+    pointer-events: none;
+}
 
-        .tooltip:hover .tooltiptext {
-            visibility: visible;
-            opacity: 1;
-        }
+.tooltip .tooltiptext::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: var(--dark) transparent transparent transparent;
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Ensure tooltips don't get cut off by overflow */
+.part-card {
+    overflow: visible !important;
+}
+
+.comparison-container {
+    position: relative;
+    overflow: visible !important;
+}
         
         /* Results section */
         .results-section {
@@ -1876,6 +1902,39 @@
                     return true;
             }
         }
+
+        // Add this to your init() function or somewhere early in your script
+function setupTooltips() {
+    document.querySelectorAll('.tooltip').forEach(tooltip => {
+        tooltip.addEventListener('mouseenter', function() {
+            const tooltipText = this.querySelector('.tooltiptext');
+            const rect = tooltipText.getBoundingClientRect();
+            
+            // Check if tooltip would go off the right edge
+            if (rect.right > window.innerWidth) {
+                tooltipText.style.left = 'auto';
+                tooltipText.style.right = '0';
+                tooltipText.style.transform = 'none';
+            }
+            
+            // Check if tooltip would go off the left edge
+            if (rect.left < 0) {
+                tooltipText.style.left = '0';
+                tooltipText.style.transform = 'none';
+            }
+            
+            // Check if tooltip would go off the top
+            if (rect.top < 0) {
+                tooltipText.style.bottom = 'auto';
+                tooltipText.style.top = '100%';
+                tooltipText.style.transform = 'translateX(-50%)';
+                
+                // Adjust arrow position
+                tooltipText.style.setProperty('--arrow-position', 'bottom: auto; top: -5px; border-color: transparent transparent var(--dark) transparent;');
+            }
+        });
+    });
+}
         
         // Display search results
         function displaySearchResults(parts) {
@@ -2008,6 +2067,7 @@
                     showToast(`This part is already in slot ${slot}`, 'error');
                     return;
                 }
+                setupTooltips();
             }
             
             const slot = document.getElementById(`add-part-${slotNumber}`);
@@ -2045,6 +2105,7 @@
                     </div>
                 `;
             }
+            
             
             // Create part card with tooltips for specs
             const partCard = document.createElement('div');
