@@ -2559,11 +2559,12 @@ function createComparisonStatsForCategory(category, parts) {
     const price1 = getLowestPrice(part1);
     const price2 = getLowestPrice(part2);
     const priceDiff = price1 - price2;
-    const priceDiffPercent = Math.round((Math.abs(priceDiff) / ((price1 + price2) / 2) * 100);
+    const priceDiffPercent = Math.round((Math.abs(priceDiff) / ((price1 + price2) / 2)) * 100);
+
 
     // Performance difference
     const perfDiff = part1.performanceScore - part2.performanceScore;
-    const perfDiffPercent = Math.round((Math.abs(perfDiff) / ((part1.performanceScore + part2.performanceScore) / 2) * 100);
+    const perfDiffPercent = Math.round((Math.abs(perfDiff) / ((firstPart.performanceScore + secondPart.performanceScore) / 2)) * 100);
 
     // Value score (performance per dollar)
     const value1 = calculateValueScore(part1);
