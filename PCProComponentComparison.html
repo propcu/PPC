@@ -2923,13 +2923,14 @@ function updateComparisonStats() {
 function calculateComparisonMetrics(part1, part2) {
     // Performance comparison
     const perfDiff = part1.performanceScore - part2.performanceScore;
-    const perfDiffPercent = Math.round((Math.abs(perfDiff) / ((part1.performanceScore + part2.performanceScore) / 2) * 100);
+    const perfDiffPercent = Math.round((Math.abs(perfDiff) / ((firstPart.performanceScore + secondPart.performanceScore) / 2)) * 100);
     
     // Price comparison
     const price1 = getLowestPrice(part1);
     const price2 = getLowestPrice(part2);
     const priceDiff = price1 - price2;
     const priceDiffPercent = Math.round((Math.abs(priceDiff) / ((price1 + price2) / 2)) * 100);
+
     
     // Value comparison
     const value1 = calculateValueScore(part1);
