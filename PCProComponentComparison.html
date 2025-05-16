@@ -1813,108 +1813,214 @@
         }
         
         // Generate recommendations
-        function generateRecommendations() {
-            if (Object.keys(currentSelectedParts).length === 0) {
-                showToast("Please add some components first to get personalized recommendations", "warning");
-                return;
+      // Generate recommendations
+function generateRecommendations() {
+    if (Object.keys(currentSelectedParts).length === 0) {
+        showToast("Please add some components first to get personalized recommendations", "warning");
+        return;
+    }
+
+    // Simulate loading recommendations
+    showToast("Generating recommendations based on your selected components...", "");
+    
+    // Simulate API call delay
+    setTimeout(() => {
+        let recommendations = [];
+        const selectedCategories = Object.values(currentSelectedParts).map(p => p.category);
+        
+        // Generate recommendations for each selected part
+        Object.values(currentSelectedParts).forEach(selectedPart => {
+            // Find similar parts in same category
+            const similarParts = findSimilarParts(selectedPart);
+            recommendations = recommendations.concat(similarParts);
+            
+            // Find compatible parts for this part
+            const compatibleParts = findCompatibleParts(selectedPart);
+            recommendations = recommendations.concat(compatibleParts);
+        });
+        
+        // Remove duplicates
+        recommendations = recommendations.filter((rec, index, self) =>
+            index === self.findIndex(r => r.id === rec.id)
+        );
+        
+        // Limit to 6 recommendations
+        recommendations = recommendations.slice(0, 6);
+        
+        if (recommendations.length === 0) {
+            // Fallback recommendations if none found
+            recommendations = [
+                {
+                    id: 'rec1',
+                    name: "SSD Storage",
+                    description: "Fast NVMe SSD for your operating system and applications",
+                    category: "storage",
+                    price: 89.99,
+                    performanceScore: 75
+                },
+                {
+                    id: 'rec2',
+                    name: "CPU Cooler",
+                    description: "Efficient cooling solution for your processor",
+                    category: "cooling",
+                    price: 59.99,
+                    performanceScore: 80
+                },
+                {
+                    id: 'rec3',
+                    name: "PC Case",
+                    description: "Stylish case with good airflow for your components",
+                    category: "case",
+                    price: 99.99,
+                    performanceScore: 85
+                }
+            ];
+        }
+        
+        showToast(`Generated ${recommendations.length} recommendations!`, "success");
+        displayRecommendations(recommendations);
+    }, 1500);
+}
+
+// Find similar parts (same category, similar price/performance)
+function findSimilarParts(part) {
+    if (!partsDatabase[part.category]) return [];
+    
+    const partPrice = getLowestPrice(part);
+    const priceRange = [partPrice * 0.7, partPrice * 1.3]; // ±30% price range
+    
+    return partsDatabase[part.category]
+        .filter(p => p.id !== part.id) // Exclude current part
+        .filter(p => {
+            const pPrice = getLowestPrice(p);
+            return pPrice >= priceRange[0] && pPrice <= priceRange[1];
+        })
+        .sort((a, b) => {
+            // Sort by closest performance score
+            return Math.abs(a.performanceScore - part.performanceScore) - 
+                   Math.abs(b.performanceScore - part.performanceScore);
+        })
+        .slice(0, 3) // Limit to 3 similar parts
+        .map(p => ({
+            ...p,
+            description: `Similar ${part.category} ($${getLowestPrice(p)}, ${p.performanceScore} pts)`
+        }));
+}
+
+// Find compatible parts for the given part
+function findCompatibleParts(part) {
+    let compatibleParts = [];
+    
+    if (part.category === 'cpu') {
+        // Find compatible motherboards
+        if (part.specs.socket) {
+            compatibleParts = partsDatabase['motherboard']
+                .filter(mb => mb.specs.socket === part.specs.socket)
+                .slice(0, 2)
+                .map(mb => ({
+                    ...mb,
+                    description: `Compatible motherboard (${mb.specs.socket} socket)`
+                }));
+        }
+        
+        // Find CPU coolers
+        compatibleParts = compatibleParts.concat(
+            partsDatabase['cooling']
+                .filter(cooler => cooler.specs.socket?.includes(part.specs.socket))
+                .slice(0, 2)
+                .map(cooler => ({
+                    ...cooler,
+                    description: `CPU cooler (compatible with ${part.specs.socket})`
+                }))
+        );
+    }
+    else if (part.category === 'motherboard') {
+        // Find compatible RAM
+        if (part.specs.memory_type) {
+            compatibleParts = partsDatabase['ram']
+                .filter(ram => ram.specs.memory_type === part.specs.memory_type)
+                .slice(0, 2)
+                .map(ram => ({
+                    ...ram,
+                    description: `Compatible RAM (${ram.specs.memory_type})`
+                }));
+        }
+    }
+    else if (part.category === 'gpu') {
+        // Find PSUs with enough wattage
+        const gpuTdp = extractNumericValue(part.specs.tdp) || 150;
+        const minPsuWattage = gpuTdp + 300; // Add headroom for rest of system
+        
+        compatibleParts = partsDatabase['psu']
+            .filter(psu => {
+                const psuWattage = extractNumericValue(psu.specs.wattage) || 0;
+                return psuWattage >= minPsuWattage;
+            })
+            .slice(0, 2)
+            .map(psu => ({
+                ...psu,
+                description: `Recommended PSU (${psu.specs.wattage})`
+            }));
+    }
+    
+    return compatibleParts;
+}
+
+// Display recommendations in the UI
+function displayRecommendations(recommendations) {
+    const emptyState = document.querySelector('.empty-state');
+    emptyState.innerHTML = `
+        <h3>Recommended Components</h3>
+        <button id="refresh-recommendations" style="margin-bottom: 20px;">
+            <i class="fas fa-sync-alt"></i> Refresh Recommendations
+        </button>
+        <div class="part-list" style="margin-top: 20px;">
+            ${recommendations.map(rec => `
+                <div class="part-list-item">
+                    <h4>${rec.name}</h4>
+                    <span class="category-badge">${rec.category}</span>
+                    <span class="price-tag">$${getLowestPrice(rec)}</span>
+                    <p style="margin-top: 10px; font-size: 0.9rem;">${rec.description}</p>
+                    <button style="margin-top: 15px; width: 100%;" onclick="addRecommendedPart('${rec.id}')">
+                        <i class="fas fa-plus"></i> Add to Comparison
+                    </button>
+                </div>
+            `).join('')}
+        </div>
+    `;
+    
+    // Add refresh button functionality
+    document.getElementById('refresh-recommendations').addEventListener('click', generateRecommendations);
+    
+    // Add function to add recommended parts
+    window.addRecommendedPart = function(partId) {
+        // Find the part in recommendations
+        let partToAdd = null;
+        
+        // Search through all categories in partsDatabase
+        for (const category in partsDatabase) {
+            partToAdd = partsDatabase[category].find(p => p.id === partId);
+            if (partToAdd) break;
+        }
+        
+        if (partToAdd) {
+            // Find the next available slot
+            let nextSlot = 1;
+            while (currentSelectedParts[nextSlot] && nextSlot < 6) {
+                nextSlot++;
             }
             
-            // Simulate loading recommendations
-            showToast("Generating recommendations based on your selected components...", "");
-            
-            // Simulate API call delay
-            setTimeout(() => {
-                // Sample recommendations based on selected parts
-                const categories = Object.values(currentSelectedParts).map(p => p.category);
-                let recommendations = [];
-                
-                if (categories.includes('cpu') && !categories.includes('motherboard')) {
-                    recommendations.push({
-                        name: "Compatible Motherboard",
-                        description: "Based on your CPU selection, we recommend a compatible motherboard",
-                        category: "motherboard"
-                    });
-                }
-                
-                if (categories.includes('gpu') && !categories.includes('psu')) {
-                    recommendations.push({
-                        name: "Power Supply Unit",
-                        description: "A high-quality PSU to power your GPU and system",
-                        category: "psu"
-                    });
-                }
-                
-                if (categories.includes('motherboard') && !categories.includes('ram')) {
-                    recommendations.push({
-                        name: "RAM Kit",
-                        description: "Fast memory compatible with your motherboard",
-                        category: "ram"
-                    });
-                }
-                
-                if (recommendations.length === 0) {
-                    recommendations.push({
-                        name: "SSD Storage",
-                        description: "Fast NVMe SSD for your operating system and applications",
-                        category: "storage"
-                    });
-                    recommendations.push({
-                        name: "CPU Cooler",
-                        description: "Efficient cooling solution for your processor",
-                        category: "cooling"
-                    });
-                    recommendations.push({
-                        name: "PC Case",
-                        description: "Stylish case with good airflow for your components",
-                        category: "case"
-                    });
-                }
-                
-                showToast(`Generated ${recommendations.length} recommendations!`, "success");
-                
-                // Display recommendations in the empty state section
-                const emptyState = document.querySelector('.empty-state');
-                emptyState.innerHTML = `
-                    <h3>Recommended Components</h3>
-                    <div class="part-list" style="margin-top: 20px;">
-                        ${recommendations.map(rec => `
-                            <div class="part-list-item">
-                                <h4>${rec.name}</h4>
-                                <span class="category-badge">${rec.category}</span>
-                                <p style="margin-top: 10px; font-size: 0.9rem;">${rec.description}</p>
-                                <button style="margin-top: 15px; width: 100%;" onclick="addRecommendedPart('${rec.category}')">
-                                    <i class="fas fa-plus"></i> Add to Comparison
-                                </button>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-                
-                // Add the function to global scope so it can be called from the button
-                window.addRecommendedPart = function(category) {
-                    // Find a random part from this category
-                    if (partsDatabase[category] && partsDatabase[category].length > 0) {
-                        const randomPart = partsDatabase[category][Math.floor(Math.random() * partsDatabase[category].length)];
-                        
-                        // Find the next available slot
-                        let nextSlot = 1;
-                        while (currentSelectedParts[nextSlot] && nextSlot < 6) {
-                            nextSlot++;
-                        }
-                        
-                        if (nextSlot <= 6) {
-                            addPartToComparison(randomPart, nextSlot);
-                            showToast(`Added ${randomPart.name} to comparison`, "success");
-                        } else {
-                            showToast("Maximum of 6 components reached", "warning");
-                        }
-                    } else {
-                        showToast(`No ${category} parts found in database`, "error");
-                    }
-                };
-                
-            }, 1500);
+            if (nextSlot <= 6) {
+                addPartToComparison(partToAdd, nextSlot);
+                showToast(`Added ${partToAdd.name} to comparison`, "success");
+            } else {
+                showToast("Maximum of 6 components reached", "warning");
+            }
+        } else {
+            showToast("Part not found in database", "error");
         }
+    };
+}
         
         // Show toast notification
         function showToast(message, type = '') {
@@ -2457,6 +2563,7 @@
         }
         
 // Update comparison statistics and sections
+// Update comparison statistics
 function updateComparisonStats() {
     statsGrid.innerHTML = '';
     
@@ -2486,66 +2593,72 @@ function updateComparisonStats() {
     // Create comparison sections for each category
     for (const [category, parts] of Object.entries(partsByCategory)) {
         if (parts.length > 1) {
-            // Only create comparison sections if we have at least 2 parts of same type
-            const section = document.createElement('div');
-            section.className = 'comparison-section';
-            section.style.gridColumn = '1 / -1';
-            section.style.marginTop = '20px';
-            section.innerHTML = `
-                <h3 style="color: var(--primary); margin-bottom: 15px;">
-                    <i class="fas fa-balance-scale"></i> ${category.toUpperCase()} Comparison
-                </h3>
-                <div class="stats-grid">
-                    ${createComparisonStatsForCategory(category, parts)}
+            // Only show comparison stats if we have multiple parts in this category
+            const firstPart = parts[0];
+            const secondPart = parts[1];
+            
+            // Performance difference
+            const perfDiff = firstPart.performanceScore - secondPart.performanceScore;
+            const perfDiffPercent = Math.round((Math.abs(perfDiff) / ((firstPart.performanceScore + secondPart.performanceScore) / 2)) * 100);
+            
+            // Price difference
+            const price1 = getLowestPrice(firstPart);
+            const price2 = getLowestPrice(secondPart);
+            const priceDiff = price1 - price2;
+            const priceDiffPercent = Math.round((Math.abs(priceDiff) / ((price1 + price2) / 2)) * 100);
+            
+            // Value score (performance per dollar)
+            const value1 = calculateValueScore(firstPart);
+            const value2 = calculateValueScore(secondPart);
+            const valueDiff = value1 - value2;
+            
+            statsGrid.innerHTML += `
+                <div class="stat-card">
+                    <i class="fas fa-balance-scale"></i>
+                    <h3>${category.toUpperCase()}</h3>
+                    <p>Comparison</p>
+                    <p class="part-name">${firstPart.name} vs ${secondPart.name}</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <h3>${perfDiff > 0 ? '+' : ''}${perfDiff}</h3>
+                    <p>Performance Difference</p>
+                    <p class="price-difference ${perfDiff > 0 ? 'positive' : 'negative'}">
+                        ${perfDiff > 0 ? firstPart.name : secondPart.name} is faster
+                    </p>
+                    <p class="stat-description">${perfDiffPercent}% difference</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-money-bill-wave"></i>
+                    <h3>${priceDiffPercent}%</h3>
+                    <p>Price Difference</p>
+                    <p class="price-difference ${priceDiff > 0 ? 'negative' : 'positive'}">
+                        ${priceDiff > 0 ? firstPart.name : secondPart.name} is more expensive
+                    </p>
+                    <p class="stat-description">$${Math.abs(priceDiff)} difference</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-chart-line"></i>
+                    <h3>${valueDiff > 0 ? '+' : ''}${valueDiff}</h3>
+                    <p>Value Difference</p>
+                    <p class="price-difference ${valueDiff > 0 ? 'positive' : 'negative'}">
+                        ${valueDiff > 0 ? firstPart.name : secondPart.name} has better value
+                    </p>
+                    <p class="stat-description">Performance per dollar</p>
                 </div>
             `;
-            statsGrid.appendChild(section);
         }
     }
     
-    // Basic stats card
+    // Add general stats cards
     statsGrid.innerHTML += `
         <div class="stat-card">
             <i class="fas fa-microchip"></i>
             <h3>${partCount}</h3>
-            <p>Components Selected</p>
-            <p class="stat-description">${Object.keys(partsByCategory).join(', ')}</p>
+            <p>Total Components</p>
+            <p class="stat-description">${Object.keys(partsByCategory).length} categories</p>
         </div>
     `;
-    
-    // Add individual part stats if we have only one of a type
-    for (const [category, parts] of Object.entries(partsByCategory)) {
-        if (parts.length === 1) {
-            const part = parts[0];
-            const lowestPrice = getLowestPrice(part);
-            const price1 = typeof lowestPrice === 'number' ? lowestPrice : extractNumericValue(part.specs.price) || 1;
-            const perfPerDollar1 = (part.performanceScore / price1).toFixed(2);
-            
-            statsGrid.innerHTML += `
-                <div class="stat-card">
-                    <i class="fas fa-star"></i>
-                    <h3>${part.performanceScore}</h3>
-                    <p>Performance Score</p>
-                    <p class="part-name">${part.name}</p>
-                    <p class="stat-description">Out of 100 benchmark score</p>
-                </div>
-                <div class="stat-card">
-                    <i class="fas fa-dollar-sign"></i>
-                    <h3>$${price1}</h3>
-                    <p>Best Price</p>
-                    <p class="part-name">${part.name}</p>
-                    <p class="stat-description">Current market price</p>
-                </div>
-                <div class="stat-card">
-                    <i class="fas fa-percentage"></i>
-                    <h3>${perfPerDollar1}</h3>
-                    <p>Performance per $</p>
-                    <p class="part-name">${part.name}</p>
-                    <p class="stat-description">Higher is better value</p>
-                </div>
-            `;
-        }
-    }
 }
 
 // Helper to create comparison stats for a specific category
