@@ -1812,214 +1812,383 @@
             };
         }
         
-        // Generate recommendations
-      // Generate recommendations
+     // Generate recommendations with enhanced logic
 function generateRecommendations() {
     if (Object.keys(currentSelectedParts).length === 0) {
         showToast("Please add some components first to get personalized recommendations", "warning");
         return;
     }
 
-    // Simulate loading recommendations
-    showToast("Generating recommendations based on your selected components...", "");
-    
-    // Simulate API call delay
+    // Show loading state
+    const emptyState = document.querySelector('.empty-state');
+    emptyState.innerHTML = `
+        <div class="loading-recommendations">
+            <i class="fas fa-spinner fa-spin"></i>
+            <h3>Analyzing your components...</h3>
+            <p>Finding the best recommendations for your build</p>
+        </div>
+    `;
+
+    // Simulate API call delay with more realistic timing
     setTimeout(() => {
-        let recommendations = [];
-        const selectedCategories = Object.values(currentSelectedParts).map(p => p.category);
-        
-        // Generate recommendations for each selected part
-        Object.values(currentSelectedParts).forEach(selectedPart => {
-            // Find similar parts in same category
-            const similarParts = findSimilarParts(selectedPart);
-            recommendations = recommendations.concat(similarParts);
+        try {
+            const recommendations = [];
+            const selectedCategories = Object.values(currentSelectedParts).map(p => p.category);
+            const budget = calculateCurrentBuildBudget();
+            const performanceLevel = determinePerformanceLevel();
             
-            // Find compatible parts for this part
-            const compatibleParts = findCompatibleParts(selectedPart);
-            recommendations = recommendations.concat(compatibleParts);
-        });
-        
-        // Remove duplicates
-        recommendations = recommendations.filter((rec, index, self) =>
-            index === self.findIndex(r => r.id === rec.id)
-        );
-        
-        // Limit to 6 recommendations
-        recommendations = recommendations.slice(0, 6);
-        
-        if (recommendations.length === 0) {
-            // Fallback recommendations if none found
-            recommendations = [
-                {
-                    id: 'rec1',
-                    name: "SSD Storage",
-                    description: "Fast NVMe SSD for your operating system and applications",
-                    category: "storage",
-                    price: 89.99,
-                    performanceScore: 75
-                },
-                {
-                    id: 'rec2',
-                    name: "CPU Cooler",
-                    description: "Efficient cooling solution for your processor",
-                    category: "cooling",
-                    price: 59.99,
-                    performanceScore: 80
-                },
-                {
-                    id: 'rec3',
-                    name: "PC Case",
-                    description: "Stylish case with good airflow for your components",
-                    category: "case",
-                    price: 99.99,
-                    performanceScore: 85
-                }
-            ];
+            // 1. Recommend alternatives for existing components
+            Object.values(currentSelectedParts).forEach(selectedPart => {
+                // Find better value alternatives
+                recommendations.push(...findBetterValueAlternatives(selectedPart, budget));
+                
+                // Find performance upgrades
+                recommendations.push(...findPerformanceUpgrades(selectedPart, performanceLevel));
+                
+                // Find compatible components
+                recommendations.push(...findCompatibleComponents(selectedPart));
+            });
+
+            // 2. Recommend complementary components for missing categories
+            const missingCategories = getMissingCategories();
+            missingCategories.forEach(category => {
+                recommendations.push(...recommendForMissingCategory(category, budget, performanceLevel));
+            });
+
+            // 3. Remove duplicates and limit to 8 best recommendations
+            const uniqueRecs = removeDuplicateRecommendations(recommendations);
+            const sortedRecs = sortRecommendations(uniqueRecs, budget, performanceLevel);
+            const finalRecs = sortedRecs.slice(0, 8);
+
+            if (finalRecs.length === 0) {
+                throw new Error("No recommendations found");
+            }
+
+            displayRecommendations(finalRecs, budget);
+            showToast(`Found ${finalRecs.length} personalized recommendations`, "success");
+        } catch (error) {
+            console.error("Recommendation error:", error);
+            showToast("Couldn't generate recommendations. Please try again.", "error");
+            displayFallbackRecommendations();
         }
-        
-        showToast(`Generated ${recommendations.length} recommendations!`, "success");
-        displayRecommendations(recommendations);
-    }, 1500);
+    }, 2000); // Increased delay for more realistic loading
 }
 
-// Find similar parts (same category, similar price/performance)
-function findSimilarParts(part) {
+// Helper function to calculate current build budget
+function calculateCurrentBuildBudget() {
+    return Object.values(currentSelectedParts).reduce((total, part) => {
+        return total + (getLowestPrice(part) || 0);
+    }, 0);
+}
+
+// Determine performance level based on selected parts
+function determinePerformanceLevel() {
+    const avgScore = Object.values(currentSelectedParts).reduce((sum, part) => {
+        return sum + (part.performanceScore || 50);
+    }, 0) / Math.max(1, Object.keys(currentSelectedParts).length);
+
+    if (avgScore > 80) return "enthusiast";
+    if (avgScore > 65) return "high";
+    if (avgScore > 45) return "mid";
+    return "entry";
+}
+
+// Find better value alternatives (similar performance, lower price)
+function findBetterValueAlternatives(part, budget) {
     if (!partsDatabase[part.category]) return [];
     
-    const partPrice = getLowestPrice(part);
-    const priceRange = [partPrice * 0.7, partPrice * 1.3]; // ±30% price range
+    const partValue = calculateValueScore(part);
+    const priceRange = [part.specs.price * 0.5, part.specs.price * 1.1]; // Wider but sensible range
     
     return partsDatabase[part.category]
-        .filter(p => p.id !== part.id) // Exclude current part
+        .filter(p => p.id !== part.id)
         .filter(p => {
             const pPrice = getLowestPrice(p);
-            return pPrice >= priceRange[0] && pPrice <= priceRange[1];
+            return pPrice >= priceRange[0] && pPrice <= priceRange[1] &&
+                   Math.abs(p.performanceScore - part.performanceScore) <= 10 &&
+                   calculateValueScore(p) > partValue * 1.1; // At least 10% better value
         })
-        .sort((a, b) => {
-            // Sort by closest performance score
-            return Math.abs(a.performanceScore - part.performanceScore) - 
-                   Math.abs(b.performanceScore - part.performanceScore);
-        })
-        .slice(0, 3) // Limit to 3 similar parts
+        .sort((a, b) => calculateValueScore(b) - calculateValueScore(a))
+        .slice(0, 2)
         .map(p => ({
             ...p,
-            description: `Similar ${part.category} ($${getLowestPrice(p)}, ${p.performanceScore} pts)`
+            type: "better_value",
+            description: `Better value alternative (${Math.round(calculateValueScore(p)/partValue*100)}% more value)`
         }));
 }
 
-// Find compatible parts for the given part
-function findCompatibleParts(part) {
-    let compatibleParts = [];
+// Find performance upgrades
+function findPerformanceUpgrades(part, performanceLevel) {
+    if (!partsDatabase[part.category]) return [];
+    
+    return partsDatabase[part.category]
+        .filter(p => p.id !== part.id)
+        .filter(p => {
+            // For high-end builds, only show significant upgrades
+            if (performanceLevel === "enthusiast") {
+                return p.performanceScore > part.performanceScore + 15;
+            }
+            return p.performanceScore > part.performanceScore + 5;
+        })
+        .sort((a, b) => b.performanceScore - a.performanceScore)
+        .slice(0, 2)
+        .map(p => ({
+            ...p,
+            type: "performance_upgrade",
+            description: `Performance upgrade (+${p.performanceScore - part.performanceScore} pts)`
+        }));
+}
+
+// Find compatible components with enhanced logic
+function findCompatibleComponents(part) {
+    const compatibleParts = [];
     
     if (part.category === 'cpu') {
-        // Find compatible motherboards
-        if (part.specs.socket) {
-            compatibleParts = partsDatabase['motherboard']
-                .filter(mb => mb.specs.socket === part.specs.socket)
+        // Find motherboards with same socket and chipset
+        if (part.specs.socket && part.specs.chipset) {
+            partsDatabase['motherboard']
+                .filter(mb => 
+                    mb.specs.socket === part.specs.socket &&
+                    mb.specs.chipset?.includes(part.specs.chipset)
+                )
                 .slice(0, 2)
-                .map(mb => ({
-                    ...mb,
-                    description: `Compatible motherboard (${mb.specs.socket} socket)`
-                }));
+                .forEach(mb => {
+                    compatibleParts.push({
+                        ...mb,
+                        type: "compatible_motherboard",
+                        description: `Compatible ${mb.specs.chipset} motherboard`
+                    });
+                });
         }
         
-        // Find CPU coolers
-        compatibleParts = compatibleParts.concat(
-            partsDatabase['cooling']
-                .filter(cooler => cooler.specs.socket?.includes(part.specs.socket))
-                .slice(0, 2)
-                .map(cooler => ({
-                    ...cooler,
-                    description: `CPU cooler (compatible with ${part.specs.socket})`
-                }))
-        );
-    }
-    else if (part.category === 'motherboard') {
-        // Find compatible RAM
-        if (part.specs.memory_type) {
-            compatibleParts = partsDatabase['ram']
-                .filter(ram => ram.specs.memory_type === part.specs.memory_type)
-                .slice(0, 2)
-                .map(ram => ({
-                    ...ram,
-                    description: `Compatible RAM (${ram.specs.memory_type})`
-                }));
-        }
-    }
-    else if (part.category === 'gpu') {
-        // Find PSUs with enough wattage
-        const gpuTdp = extractNumericValue(part.specs.tdp) || 150;
-        const minPsuWattage = gpuTdp + 300; // Add headroom for rest of system
-        
-        compatibleParts = partsDatabase['psu']
-            .filter(psu => {
-                const psuWattage = extractNumericValue(psu.specs.wattage) || 0;
-                return psuWattage >= minPsuWattage;
-            })
+        // Find CPU coolers with TDP rating
+        const cpuTdp = extractNumericValue(part.specs.tdp) || 65;
+        partsDatabase['cooling']
+            .filter(cooler => 
+                cooler.specs.socket?.includes(part.specs.socket) &&
+                (extractNumericValue(cooler.specs.max_tdp) || 100) >= cpuTdp
+            )
+            .sort((a, b) => (extractNumericValue(a.specs.max_tdp) || 0) - (extractNumericValue(b.specs.max_tdp) || 0))
             .slice(0, 2)
-            .map(psu => ({
-                ...psu,
-                description: `Recommended PSU (${psu.specs.wattage})`
-            }));
+            .forEach(cooler => {
+                compatibleParts.push({
+                    ...cooler,
+                    type: "cpu_cooler",
+                    description: `CPU cooler (supports ${cooler.specs.max_tdp}W TDP)`
+                });
+            });
     }
+    // Additional compatibility checks for other component types...
     
     return compatibleParts;
 }
 
-// Display recommendations in the UI
-function displayRecommendations(recommendations) {
-    const emptyState = document.querySelector('.empty-state');
-    emptyState.innerHTML = `
-        <h3>Recommended Components</h3>
-        <button id="refresh-recommendations" style="margin-bottom: 20px;">
-            <i class="fas fa-sync-alt"></i> Refresh Recommendations
-        </button>
-        <div class="part-list" style="margin-top: 20px;">
-            ${recommendations.map(rec => `
-                <div class="part-list-item">
-                    <h4>${rec.name}</h4>
-                    <span class="category-badge">${rec.category}</span>
-                    <span class="price-tag">$${getLowestPrice(rec)}</span>
-                    <p style="margin-top: 10px; font-size: 0.9rem;">${rec.description}</p>
-                    <button style="margin-top: 15px; width: 100%;" onclick="addRecommendedPart('${rec.id}')">
-                        <i class="fas fa-plus"></i> Add to Comparison
-                    </button>
-                </div>
-            `).join('')}
-        </div>
-    `;
+// Get categories not yet included in the build
+function getMissingCategories() {
+    const allCategories = ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooling'];
+    const currentCategories = Object.values(currentSelectedParts).map(p => p.category);
+    return allCategories.filter(cat => !currentCategories.includes(cat));
+}
+
+// Recommend components for missing categories
+function recommendForMissingCategory(category, budget, performanceLevel) {
+    if (!partsDatabase[category]) return [];
     
+    // Calculate target price based on budget and performance level
+    const remainingBudget = budget * 0.3; // Allocate 30% of current budget for new parts
+    const targetPrice = remainingBudget / (getMissingCategories().length || 1);
+    
+    return partsDatabase[category]
+        .filter(p => {
+            const price = getLowestPrice(p);
+            return price >= targetPrice * 0.7 && price <= targetPrice * 1.3;
+        })
+        .filter(p => {
+            // Filter by performance level
+            if (performanceLevel === "enthusiast") return p.performanceScore >= 80;
+            if (performanceLevel === "high") return p.performanceScore >= 65;
+            if (performanceLevel === "mid") return p.performanceScore >= 45;
+            return true;
+        })
+        .sort((a, b) => calculateValueScore(b) - calculateValueScore(a))
+        .slice(0, 2)
+        .map(p => ({
+            ...p,
+            type: "missing_category",
+            description: `Recommended ${category} for your build`
+        }));
+}
+
+// Remove duplicate recommendations
+function removeDuplicateRecommendations(recommendations) {
+    const seen = new Set();
+    return recommendations.filter(rec => {
+        const duplicate = seen.has(rec.id);
+        seen.add(rec.id);
+        return !duplicate;
+    });
+}
+
+// Sort recommendations by relevance
+function sortRecommendations(recommendations, budget, performanceLevel) {
+    return recommendations.sort((a, b) => {
+        // Priority to compatible components
+        if (a.type === "compatible_motherboard" || a.type === "cpu_cooler") return -1;
+        if (b.type === "compatible_motherboard" || b.type === "cpu_cooler") return 1;
+        
+        // Then by value score
+        return calculateValueScore(b) - calculateValueScore(a);
+    });
+}
+
+// Display recommendations with better UI
+function displayRecommendations(recommendations, budget) {
+    const emptyState = document.querySelector('.empty-state');
+    
+    // Group recommendations by type
+    const groupedRecs = {
+        better_value: recommendations.filter(r => r.type === "better_value"),
+        performance_upgrade: recommendations.filter(r => r.type === "performance_upgrade"),
+        compatible: recommendations.filter(r => r.type.includes("compatible")),
+        missing_category: recommendations.filter(r => r.type === "missing_category")
+    };
+
+    emptyState.innerHTML = `
+        <h3><i class="fas fa-lightbulb"></i> Personalized Recommendations</h3>
+        <div class="recommendation-controls">
+            <button id="refresh-recommendations" class="refresh-btn">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+            <div class="budget-display">
+                <i class="fas fa-wallet"></i> Current build: $${budget.toLocaleString()}
+            </div>
+        </div>
+        
+        ${groupedRecs.better_value.length > 0 ? `
+            <h4 class="recommendation-header">
+                <i class="fas fa-money-bill-wave"></i> Better Value Alternatives
+            </h4>
+            <div class="part-list">
+                ${groupedRecs.better_value.map(rec => createRecommendationCard(rec)).join('')}
+            </div>
+        ` : ''}
+        
+        ${groupedRecs.performance_upgrade.length > 0 ? `
+            <h4 class="recommendation-header">
+                <i class="fas fa-tachometer-alt"></i> Performance Upgrades
+            </h4>
+            <div class="part-list">
+                ${groupedRecs.performance_upgrade.map(rec => createRecommendationCard(rec)).join('')}
+            </div>
+        ` : ''}
+        
+        ${groupedRecs.compatible.length > 0 ? `
+            <h4 class="recommendation-header">
+                <i class="fas fa-puzzle-piece"></i> Compatible Components
+            </h4>
+            <div class="part-list">
+                ${groupedRecs.compatible.map(rec => createRecommendationCard(rec)).join('')}
+            </div>
+        ` : ''}
+        
+        ${groupedRecs.missing_category.length > 0 ? `
+            <h4 class="recommendation-header">
+                <i class="fas fa-plus-circle"></i> Complete Your Build
+            </h4>
+            <div class="part-list">
+                ${groupedRecs.missing_category.map(rec => createRecommendationCard(rec)).join('')}
+            </div>
+        ` : ''}
+        
+        <style>
+            .recommendation-controls {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 20px;
+            }
+            .refresh-btn {
+                background: var(--primary-light);
+                color: white;
+                border: none;
+                padding: 8px 15px;
+                border-radius: var(--border-radius);
+                cursor: pointer;
+                transition: var(--transition);
+            }
+            .refresh-btn:hover {
+                background: var(--primary);
+            }
+            .budget-display {
+                background: var(--light);
+                padding: 8px 15px;
+                border-radius: var(--border-radius);
+                font-weight: 500;
+            }
+            .recommendation-header {
+                margin: 25px 0 15px 0;
+                color: var(--primary-dark);
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+        </style>
+    `;
+
     // Add refresh button functionality
     document.getElementById('refresh-recommendations').addEventListener('click', generateRecommendations);
-    
-    // Add function to add recommended parts
-    window.addRecommendedPart = function(partId) {
-        // Find the part in recommendations
-        let partToAdd = null;
-        
-        // Search through all categories in partsDatabase
-        for (const category in partsDatabase) {
-            partToAdd = partsDatabase[category].find(p => p.id === partId);
-            if (partToAdd) break;
-        }
-        
-        if (partToAdd) {
-            // Find the next available slot
-            let nextSlot = 1;
-            while (currentSelectedParts[nextSlot] && nextSlot < 6) {
-                nextSlot++;
-            }
-            
-            if (nextSlot <= 6) {
-                addPartToComparison(partToAdd, nextSlot);
-                showToast(`Added ${partToAdd.name} to comparison`, "success");
-            } else {
-                showToast("Maximum of 6 components reached", "warning");
-            }
-        } else {
-            showToast("Part not found in database", "error");
-        }
-    };
+}
+
+// Create recommendation card component
+function createRecommendationCard(rec) {
+    return `
+        <div class="part-list-item recommendation-card" data-id="${rec.id}">
+            <h4>${rec.name}</h4>
+            <div class="rec-meta">
+                <span class="category-badge">${rec.category}</span>
+                <span class="price-tag">$${getLowestPrice(rec)}</span>
+                <span class="performance-badge" style="background: ${getPerformanceColor(rec.performanceScore)}">
+                    ${rec.performanceScore} pts
+                </span>
+            </div>
+            <p class="rec-description">${rec.description}</p>
+            <div class="rec-actions">
+                <button class="compare-btn" onclick="addRecommendedPart('${rec.id}')">
+                    <i class="fas fa-balance-scale"></i> Compare
+                </button>
+                <button class="view-btn" onclick="window.open('${rec.buyLinks?.amazon?.url || '#'}', '_blank')">
+                    <i class="fas fa-shopping-cart"></i> View
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// Fallback recommendations
+function displayFallbackRecommendations() {
+    const emptyState = document.querySelector('.empty-state');
+    emptyState.innerHTML = `
+        <h3><i class="fas fa-lightbulb"></i> Popular Components</h3>
+        <p>Here are some popular components to consider:</p>
+        <div class="part-list">
+            ${partsDatabase['cpu'].slice(0, 2).map(p => createRecommendationCard({
+                ...p,
+                description: "Popular CPU choice"
+            })).join('')}
+            ${partsDatabase['gpu'].slice(0, 2).map(p => createRecommendationCard({
+                ...p,
+                description: "Popular GPU choice"
+            })).join('')}
+            ${partsDatabase['ram'].slice(0, 1).map(p => createRecommendationCard({
+                ...p,
+                description: "High-performance RAM"
+            })).join('')}
+        </div>
+        <button id="refresh-recommendations" style="margin-top: 20px;">
+            <i class="fas fa-sync-alt"></i> Try Again
+        </button>
+    `;
+    document.getElementById('refresh-recommendations').addEventListener('click', generateRecommendations);
 }
         
         // Show toast notification
