@@ -1829,35 +1829,39 @@ function generateRecommendations() {
         </div>
     `;
 
-    // Simulate API call delay with more realistic timing
+    // Simulate API call delay
     setTimeout(() => {
         try {
             const recommendations = [];
             const selectedCategories = Object.values(currentSelectedParts).map(p => p.category);
             const budget = calculateCurrentBuildBudget();
             const performanceLevel = determinePerformanceLevel();
+            const buildPurpose = determineBuildPurpose();
             
             // 1. Recommend alternatives for existing components
             Object.values(currentSelectedParts).forEach(selectedPart => {
-                // Find better value alternatives
+                // Find better value alternatives (similar performance, lower price)
                 recommendations.push(...findBetterValueAlternatives(selectedPart, budget));
                 
-                // Find performance upgrades
+                // Find performance upgrades (better performance, reasonable price increase)
                 recommendations.push(...findPerformanceUpgrades(selectedPart, performanceLevel));
                 
-                // Find compatible components
+                // Find parts with similar performance characteristics
+                recommendations.push(...findSimilarPerformanceParts(selectedPart, selectedPart.category));
+                
+                // Find compatible components (motherboards for CPU, coolers, etc.)
                 recommendations.push(...findCompatibleComponents(selectedPart));
             });
 
             // 2. Recommend complementary components for missing categories
             const missingCategories = getMissingCategories();
             missingCategories.forEach(category => {
-                recommendations.push(...recommendForMissingCategory(category, budget, performanceLevel));
+                recommendations.push(...recommendForMissingCategory(category, budget, performanceLevel, buildPurpose));
             });
 
-            // 3. Remove duplicates and limit to 8 best recommendations
+            // 3. Remove duplicates and limit to best recommendations
             const uniqueRecs = removeDuplicateRecommendations(recommendations);
-            const sortedRecs = sortRecommendations(uniqueRecs, budget, performanceLevel);
+            const sortedRecs = sortRecommendations(uniqueRecs, budget, performanceLevel, buildPurpose);
             const finalRecs = sortedRecs.slice(0, 8);
 
             if (finalRecs.length === 0) {
@@ -1871,7 +1875,28 @@ function generateRecommendations() {
             showToast("Couldn't generate recommendations. Please try again.", "error");
             displayFallbackRecommendations();
         }
-    }, 2000); // Increased delay for more realistic loading
+    }, 2000);
+}
+
+// Determine the likely purpose of the build
+function determineBuildPurpose() {
+    const parts = Object.values(currentSelectedParts);
+    
+    // Check for gaming components
+    const hasGamingGPU = parts.some(p => p.category === 'gpu' && p.performanceScore > 70);
+    const hasHighRefreshMonitor = parts.some(p => p.category === 'monitor' && p.specs.refresh_rate?.includes('144'));
+    
+    // Check for workstation components
+    const hasWorkstationCPU = parts.some(p => p.category === 'cpu' && p.specs.core_count >= 8);
+    const hasECCmemory = parts.some(p => p.category === 'ram' && p.specs.ecc === 'Yes');
+    
+    // Check for budget build
+    const totalPrice = calculateCurrentBuildBudget();
+    
+    if (hasGamingGPU || hasHighRefreshMonitor) return "gaming";
+    if (hasWorkstationCPU || hasECCmemory) return "workstation";
+    if (totalPrice < 800) return "budget";
+    return "general";
 }
 
 // Helper function to calculate current build budget
@@ -1879,6 +1904,58 @@ function calculateCurrentBuildBudget() {
     return Object.values(currentSelectedParts).reduce((total, part) => {
         return total + (getLowestPrice(part) || 0);
     }, 0);
+}
+        // Helper function to get performance color based on score
+function getPerformanceColor(score) {
+    if (score >= 80) return 'var(--success)';
+    if (score >= 60) return 'var(--primary-light)';
+    if (score >= 40) return 'var(--warning)';
+    return 'var(--danger)';
+}
+
+// Helper to calculate similarity score between two parts
+function calculatePartSimilarity(part1, part2) {
+    if (part1.category !== part2.category) return 0;
+    
+    let score = 0;
+    
+    // Manufacturer match
+    if (part1.specs.manufacturer === part2.specs.manufacturer) {
+        score += 30;
+    }
+    
+    // Performance score proximity (closer is better)
+    const perfDiff = Math.abs(part1.performanceScore - part2.performanceScore);
+    score += Math.max(0, 50 - perfDiff);
+    
+    // Price range similarity (within 20% of each other)
+    const price1 = getLowestPrice(part1);
+    const price2 = getLowestPrice(part2);
+    const priceRatio = Math.min(price1, price2) / Math.max(price1, price2);
+    if (priceRatio > 0.8) score += 20;
+    
+    return score;
+}
+
+// Find parts with similar performance characteristics
+function findSimilarPerformanceParts(referencePart, category) {
+    if (!partsDatabase[category]) return [];
+    
+    return partsDatabase[category]
+        .filter(p => p.id !== referencePart.id)
+        .map(p => ({
+            part: p,
+            similarity: calculatePartSimilarity(referencePart, p),
+            performanceDiff: p.performanceScore - referencePart.performanceScore
+        }))
+        .filter(p => Math.abs(p.performanceDiff) <= 15) // Within 15 points
+        .sort((a, b) => b.similarity - a.similarity)
+        .slice(0, 5)
+        .map(item => ({
+            ...item.part,
+            type: "similar_performance",
+            description: `Similar performance (${item.performanceDiff > 0 ? '+' : ''}${item.performanceDiff} pts)`
+        }));
 }
 
 // Determine performance level based on selected parts
@@ -1990,13 +2067,42 @@ function getMissingCategories() {
     return allCategories.filter(cat => !currentCategories.includes(cat));
 }
 
-// Recommend components for missing categories
-function recommendForMissingCategory(category, budget, performanceLevel) {
+function recommendForMissingCategory(category, budget, performanceLevel, purpose) {
     if (!partsDatabase[category]) return [];
     
     // Calculate target price based on budget and performance level
     const remainingBudget = budget * 0.3; // Allocate 30% of current budget for new parts
     const targetPrice = remainingBudget / (getMissingCategories().length || 1);
+    
+    // Purpose-based filters
+    const purposeFilters = {
+        gaming: {
+            cpu: p => p.specs.single_core_score >= 150,
+            gpu: p => p.performanceScore >= 70,
+            ram: p => p.specs.speed >= 3200,
+            storage: p => p.specs.type === 'NVMe'
+        },
+        workstation: {
+            cpu: p => p.specs.core_count >= 8,
+            gpu: p => p.specs.vram >= 8,
+            ram: p => p.specs.capacity >= 32,
+            storage: p => p.specs.endurance >= 1000
+        },
+        budget: {
+            cpu: p => calculateValueScore(p) >= 60,
+            gpu: p => calculateValueScore(p) >= 60,
+            ram: p => calculateValueScore(p) >= 60,
+            storage: p => calculateValueScore(p) >= 60
+        },
+        general: {
+            cpu: p => true,
+            gpu: p => true,
+            ram: p => true,
+            storage: p => true
+        }
+    };
+    
+    const purposeFilter = purposeFilters[purpose]?.[category] || (() => true);
     
     return partsDatabase[category]
         .filter(p => {
@@ -2010,12 +2116,13 @@ function recommendForMissingCategory(category, budget, performanceLevel) {
             if (performanceLevel === "mid") return p.performanceScore >= 45;
             return true;
         })
+        .filter(purposeFilter)
         .sort((a, b) => calculateValueScore(b) - calculateValueScore(a))
         .slice(0, 2)
         .map(p => ({
             ...p,
             type: "missing_category",
-            description: `Recommended ${category} for your build`
+            description: `Recommended ${category} for ${purpose} build`
         }));
 }
 
@@ -2139,19 +2246,32 @@ function displayRecommendations(recommendations, budget) {
     document.getElementById('refresh-recommendations').addEventListener('click', generateRecommendations);
 }
 
-// Create recommendation card component
 function createRecommendationCard(rec) {
+    const price = getLowestPrice(rec);
+    const valueScore = calculateValueScore(rec);
+    const performanceColor = getPerformanceColor(rec.performanceScore);
+    
     return `
         <div class="part-list-item recommendation-card" data-id="${rec.id}">
             <h4>${rec.name}</h4>
             <div class="rec-meta">
-                <span class="category-badge">${rec.category}</span>
-                <span class="price-tag">$${getLowestPrice(rec)}</span>
-                <span class="performance-badge" style="background: ${getPerformanceColor(rec.performanceScore)}">
+                <span class="category-badge">${rec.category.toUpperCase()}</span>
+                <span class="price-tag">$${price}</span>
+                <span class="performance-badge" style="background: ${performanceColor}">
                     ${rec.performanceScore} pts
                 </span>
+                <span class="value-badge" style="background: ${getPerformanceColor(valueScore/2)}">
+                    Value: ${valueScore}
+                </span>
             </div>
-            <p class="rec-description">${rec.description}</p>
+            <p class="rec-description"><i class="fas fa-info-circle"></i> ${rec.description}</p>
+            <div class="spec-preview">
+                ${Object.entries(rec.specs).slice(0, 2).map(([key, val]) => `
+                    <div class="spec-preview-item">
+                        ${key.replace('_', ' ')}: ${val.substring(0, 15)}${val.length > 15 ? '...' : ''}
+                    </div>
+                `).join('')}
+            </div>
             <div class="rec-actions">
                 <button class="compare-btn" onclick="addRecommendedPart('${rec.id}')">
                     <i class="fas fa-balance-scale"></i> Compare
@@ -2161,6 +2281,71 @@ function createRecommendationCard(rec) {
                 </button>
             </div>
         </div>
+        <style>
+            .recommendation-card {
+                position: relative;
+                transition: all 0.3s ease;
+            }
+            .recommendation-card:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            }
+            .rec-meta {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                margin-bottom: 10px;
+                align-items: center;
+            }
+            .rec-description {
+                font-size: 0.9rem;
+                color: var(--dark);
+                margin: 10px 0;
+            }
+            .rec-description i {
+                color: var(--primary);
+                margin-right: 5px;
+            }
+            .rec-actions {
+                display: flex;
+                gap: 10px;
+                margin-top: 15px;
+            }
+            .rec-actions button {
+                flex: 1;
+                padding: 8px;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 0.8rem;
+                transition: var(--transition);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 5px;
+            }
+            .compare-btn {
+                background: var(--primary-light);
+                color: white;
+            }
+            .compare-btn:hover {
+                background: var(--primary);
+            }
+            .view-btn {
+                background: var(--light);
+                color: var(--dark);
+            }
+            .view-btn:hover {
+                background: var(--light-gray);
+            }
+            .performance-badge, .value-badge {
+                font-size: 0.7rem;
+                padding: 3px 8px;
+                border-radius: 10px;
+                color: white;
+                font-weight: bold;
+            }
+        </style>
     `;
 }
 
@@ -2713,6 +2898,39 @@ function displayFallbackRecommendations() {
             const match = str.match(/\d+\.?\d*/);
             return match ? parseFloat(match[0]) : null;
         }
+
+        function addRecommendedPart(partId) {
+    // Find the part in the database
+    let foundPart = null;
+    
+    for (const category in partsDatabase) {
+        const part = partsDatabase[category].find(p => p.id === partId);
+        if (part) {
+            foundPart = part;
+            break;
+        }
+    }
+    
+    if (!foundPart) {
+        showToast("Could not find the selected part", "error");
+        return;
+    }
+    
+    // Find next available slot
+    let targetSlot = 1;
+    while (currentSelectedParts[targetSlot] && targetSlot <= 6) {
+        targetSlot++;
+    }
+    
+    if (targetSlot > 6) {
+        showToast("Maximum of 6 components can be compared", "warning");
+        return;
+    }
+    
+    addPartToComparison(foundPart, targetSlot);
+    showToast(`Added ${foundPart.name} to comparison`, "success");
+}
+
         
         // Helper to highlight a specific spec value
         function highlightSpecValue(slotNumber, specName, specValue) {
